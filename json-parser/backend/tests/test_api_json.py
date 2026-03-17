@@ -1,5 +1,6 @@
 """Unit tests for JSON API endpoints."""
 
+import json
 import unittest
 from unittest.mock import patch
 
@@ -142,6 +143,84 @@ class TestJsonApiEndpoints(unittest.TestCase):
         """Test that non-existent endpoint returns 404."""
         response = self.client.get("/api/nonexistent")
         self.assertEqual(response.status_code, 404)
+
+
+class TestValidateColumnsApi(unittest.TestCase):
+    """Tests for POST /api/json/validate-columns endpoint."""
+
+    def setUp(self):
+        self.client = TestClient(app)
+
+    def _make_datax(self, reader_cols, writer_cols):
+        return json.dumps({
+            "job": {
+                "content": [{
+                    "reader": {"parameter": {"column": reader_cols}},
+                    "writer": {"parameter": {"column": writer_cols}},
+                }]
+            }
+        })
+
+    def test_validate_columns_matching(self):
+        """Matching columns should return valid=true."""
+        js = self._make_datax(
+            ["`id`", "`name`"],
+            [{"name": "id", "type": "bigint"}, {"name": "name", "type": "string"}],
+        )
+        response = self.client.post("/api/json/validate-columns", json={"json": js})
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["valid"])
+        self.assertEqual(len(data["results"]), 1)
+        self.assertEqual(data["results"][0]["mismatches"], [])
+
+    def test_validate_columns_mismatched(self):
+        """Mismatched columns should return valid=false with details."""
+        js = self._make_datax(
+            ["`id`", "`age`"],
+            [{"name": "id", "type": "bigint"}, {"name": "name", "type": "string"}],
+        )
+        response = self.client.post("/api/json/validate-columns", json={"json": js})
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertFalse(data["valid"])
+        mismatches = data["results"][0]["mismatches"]
+        self.assertEqual(len(mismatches), 1)
+        self.assertEqual(mismatches[0]["position"], 2)
+        self.assertEqual(mismatches[0]["reader_field"], "age")
+        self.assertEqual(mismatches[0]["writer_field"], "name")
+
+    def test_validate_columns_invalid_json(self):
+        """Invalid JSON should return 400."""
+        response = self.client.post(
+            "/api/json/validate-columns",
+            json={"json": "{bad json}"},
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("detail", response.json())
+
+    def test_validate_columns_missing_structure(self):
+        """JSON missing job.content should return 400."""
+        response = self.client.post(
+            "/api/json/validate-columns",
+            json={"json": '{"foo": "bar"}'},
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("detail", response.json())
+
+    def test_validate_columns_count_mismatch(self):
+        """Different column counts should report reader_count and writer_count."""
+        js = self._make_datax(
+            ["`id`", "`name`", "`extra`"],
+            [{"name": "id", "type": "bigint"}],
+        )
+        response = self.client.post("/api/json/validate-columns", json={"json": js})
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertFalse(data["valid"])
+        r = data["results"][0]
+        self.assertEqual(r["reader_count"], 3)
+        self.assertEqual(r["writer_count"], 1)
 
 
 class TestRootEndpoints(unittest.TestCase):

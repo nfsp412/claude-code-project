@@ -4,6 +4,7 @@
  */
 
 import axios from 'axios'
+import type { ColumnValidateResponse } from '../types'
 
 const API_BASE_URL = 'http://localhost:8000/api/json'
 
@@ -64,5 +65,10 @@ export const jsonApi = {
   getLineCount(json: string): Promise<number> {
     return api.post('/lines', { json })
       .then(res => res.data.lines)
+  },
+
+  validateColumns(json: string): Promise<ColumnValidateResponse> {
+    return api.post('/validate-columns', { json })
+      .then(res => res.data)
   }
 }

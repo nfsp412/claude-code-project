@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { jsonApi } from '../api/json';
-import { THEME } from '../constants/theme';
-import { DocumentCopy, DocumentDelete, MagicStick, Minus } from '@element-plus/icons-vue';
+import { DocumentCopy, DocumentDelete, MagicStick, Minus, Select } from '@element-plus/icons-vue';
 import { ElMessage, ElSelect, ElOption } from 'element-plus';
 import { jsonSamples } from '../data/samples';
+import type { ContentValidateResult, ColumnMismatch } from '../types';
 
 const input = ref('');
 const selectedSample = ref('');
@@ -13,13 +13,15 @@ const isValid = ref(true);
 const errorMessage = ref('');
 const indent = ref<string | number>(2);
 
-// 状态：大小和行数
 const inputSize = ref(0);
 const inputLineCount = ref(0);
 const outputSize = ref(0);
 const outputLineCount = ref(0);
 
-// 本地计算方法（用于实时统计，不调用 API）
+// 字段校验弹窗状态
+const columnDialogVisible = ref(false);
+const columnValidateResults = ref<ContentValidateResult[]>([]);
+
 const calculateStats = (text: string) => {
   return {
     size: new Blob([text]).size,
@@ -27,12 +29,10 @@ const calculateStats = (text: string) => {
   };
 };
 
-// 监听输入变化，更新统计
 watch(input, (newVal) => {
   const stats = calculateStats(newVal);
   inputSize.value = stats.size;
   inputLineCount.value = stats.lines;
-  // 实时验证
   if (newVal) {
     jsonApi.validate(newVal).then(result => {
       isValid.value = result.valid;
@@ -46,16 +46,13 @@ watch(input, (newVal) => {
   }
 }, { immediate: true });
 
-// 监听输出变化，更新统计
 watch(output, (newVal) => {
   const stats = calculateStats(newVal);
   outputSize.value = stats.size;
   outputLineCount.value = stats.lines;
 });
 
-// 格式化 JSON
 const formatJson = async () => {
-  // 空输入时不执行任何操作，不显示错误
   if (!input.value || !input.value.trim()) {
     return;
   }
@@ -75,9 +72,7 @@ const formatJson = async () => {
   }
 };
 
-// 压缩 JSON
 const minifyJson = async () => {
-  // 空输入时不执行任何操作，不显示错误
   if (!input.value || !input.value.trim()) {
     return;
   }
@@ -97,7 +92,6 @@ const minifyJson = async () => {
   }
 };
 
-// 清空内容
 const clearAll = () => {
   input.value = '';
   output.value = '';
@@ -105,7 +99,6 @@ const clearAll = () => {
   errorMessage.value = '';
 };
 
-// 复制输出
 const copyOutput = async () => {
   if (!output.value) {
     ElMessage.warning('没有可复制的内容');
@@ -119,18 +112,41 @@ const copyOutput = async () => {
   }
 };
 
-// 处理输入变化（验证已在 watch 中处理）
 const handleInputChange = () => {
   // watch 会自动处理验证和统计
 };
 
-// 加载样例数据
 const loadSample = (sampleKey: string) => {
   if (sampleKey) {
     input.value = jsonSamples[sampleKey as keyof typeof jsonSamples].data;
     selectedSample.value = '';
     handleInputChange();
   }
+};
+
+const validateColumns = async () => {
+  if (!input.value || !input.value.trim()) {
+    ElMessage.warning('请先输入 JSON');
+    return;
+  }
+  try {
+    const result = await jsonApi.validateColumns(input.value);
+    if (result.valid) {
+      ElMessage.success('字段校验通过：Reader 与 Writer 字段顺序一致');
+    } else {
+      columnValidateResults.value = result.results;
+      columnDialogVisible.value = true;
+    }
+  } catch (e: any) {
+    const detail = e.response?.data?.detail || e.message || '字段校验失败';
+    ElMessage.error(detail);
+  }
+};
+
+const getMismatchStatus = (m: ColumnMismatch): string => {
+  if (m.reader_field === null) return 'Writer 多余';
+  if (m.writer_field === null) return 'Reader 多余';
+  return '不一致';
 };
 </script>
 
@@ -145,6 +161,7 @@ const loadSample = (sampleKey: string) => {
             v-model="selectedSample"
             placeholder="加载样例"
             class="sample-select"
+            popper-class="glass-popper"
             @change="loadSample"
           >
             <el-option
@@ -172,7 +189,7 @@ const loadSample = (sampleKey: string) => {
         {{ errorMessage }}
       </div>
       <div class="action-row">
-        <el-select v-model="indent" placeholder="选择缩进" class="indent-select">
+        <el-select v-model="indent" placeholder="选择缩进" class="indent-select" popper-class="glass-popper">
           <el-option label="1 个制表符" value="tab" />
           <el-option label="2 个空格" :value="2" />
           <el-option label="4 个空格" :value="4" />
@@ -186,6 +203,13 @@ const loadSample = (sampleKey: string) => {
             @click="formatJson"
           >
             格式化
+          </el-button>
+          <el-button
+            :icon="Select"
+            class="validate-col-btn"
+            @click="validateColumns"
+          >
+            字段校验
           </el-button>
           <el-button
             :icon="DocumentDelete"
@@ -234,6 +258,56 @@ const loadSample = (sampleKey: string) => {
         </el-button>
       </div>
     </div>
+
+    <!-- 字段校验结果弹窗 -->
+    <el-dialog
+      v-model="columnDialogVisible"
+      title="字段校验结果"
+      width="700px"
+      class="column-dialog"
+    >
+      <div v-for="r in columnValidateResults" :key="r.index" class="content-result">
+        <div class="content-result-header">
+          <span class="content-index">Content [{{ r.index }}]</span>
+          <span :class="['content-status', r.valid ? 'status-pass' : 'status-fail']">
+            {{ r.valid ? '通过' : '不通过' }}
+          </span>
+          <span class="content-count">
+            Reader: {{ r.reader_count }} 个字段 / Writer: {{ r.writer_count }} 个字段
+          </span>
+        </div>
+        <el-table
+          v-if="r.mismatches.length > 0"
+          :data="r.mismatches"
+          stripe
+          size="small"
+          class="mismatch-table"
+        >
+          <el-table-column prop="position" label="位置" width="70" align="center" />
+          <el-table-column label="Reader 字段">
+            <template #default="{ row }">
+              <span :class="{ 'field-missing': row.reader_field === null }">
+                {{ row.reader_field ?? '(缺失)' }}
+              </span>
+            </template>
+          </el-table-column>
+          <el-table-column label="Writer 字段">
+            <template #default="{ row }">
+              <span :class="{ 'field-missing': row.writer_field === null }">
+                {{ row.writer_field ?? '(缺失)' }}
+              </span>
+            </template>
+          </el-table-column>
+          <el-table-column label="状态" width="120" align="center">
+            <template #default="{ row }">
+              <el-tag :type="row.reader_field === null || row.writer_field === null ? 'warning' : 'danger'" size="small">
+                {{ getMismatchStatus(row) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -282,16 +356,18 @@ const loadSample = (sampleKey: string) => {
 }
 
 :deep(.sample-select .el-input .el-input__wrapper) {
-  background: #252538 !important;
-  border: 1px solid #3d3d5c !important;
+  background: rgba(37, 37, 56, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
   box-shadow: none !important;
   border-radius: 6px;
   transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 :deep(.sample-select .el-input .el-input__wrapper:hover) {
-  background: #2a2a40 !important;
-  border-color: #505070 !important;
+  background: rgba(42, 42, 64, 0.8) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
 }
 
 :deep(.sample-select .el-input .el-input__wrapper.is-focus) {
@@ -368,16 +444,18 @@ const loadSample = (sampleKey: string) => {
 }
 
 :deep(.indent-select .el-input .el-input__wrapper) {
-  background: #252538 !important;
-  border: 1px solid #3d3d5c !important;
+  background: rgba(37, 37, 56, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
   box-shadow: none !important;
   border-radius: 6px;
   transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 :deep(.indent-select .el-input .el-input__wrapper:hover) {
-  background: #2a2a40 !important;
-  border-color: #505070 !important;
+  background: rgba(42, 42, 64, 0.8) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
 }
 
 :deep(.indent-select .el-input .el-input__wrapper.is-focus) {
@@ -403,6 +481,17 @@ const loadSample = (sampleKey: string) => {
 .format-btn:hover {
   background-color: #2563eb !important;
   border-color: #2563eb !important;
+}
+
+.validate-col-btn {
+  background-color: #8b5cf6 !important;
+  border-color: #8b5cf6 !important;
+  color: #fff !important;
+}
+
+.validate-col-btn:hover {
+  background-color: #7c3aed !important;
+  border-color: #7c3aed !important;
 }
 
 .clear-btn {
@@ -436,6 +525,93 @@ const loadSample = (sampleKey: string) => {
 .copy-btn:hover {
   background-color: #0da86e !important;
   border-color: #0da86e !important;
+}
+
+/* 字段校验弹窗 */
+:deep(.column-dialog .el-dialog) {
+  background: #1e1e30 !important;
+  border: 1px solid #2d3748;
+  border-radius: 12px;
+}
+
+:deep(.column-dialog .el-dialog__header) {
+  border-bottom: 1px solid #2d3748;
+  padding: 16px 20px;
+}
+
+:deep(.column-dialog .el-dialog__title) {
+  color: #e2e8f0;
+  font-weight: 600;
+}
+
+:deep(.column-dialog .el-dialog__body) {
+  padding: 20px;
+  color: #e2e8f0;
+}
+
+:deep(.column-dialog .el-dialog__headerbtn .el-dialog__close) {
+  color: #a0aec0;
+}
+
+.content-result {
+  margin-bottom: 1.5rem;
+}
+
+.content-result:last-child {
+  margin-bottom: 0;
+}
+
+.content-result-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.content-index {
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.content-status {
+  font-size: 0.8rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.status-pass {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.status-fail {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.content-count {
+  font-size: 0.8rem;
+  color: #a0aec0;
+  margin-left: auto;
+}
+
+.field-missing {
+  color: #a0aec0;
+  font-style: italic;
+}
+
+:deep(.mismatch-table) {
+  --el-table-bg-color: #1a1a2e;
+  --el-table-tr-bg-color: #1a1a2e;
+  --el-table-header-bg-color: #252538;
+  --el-table-row-hover-bg-color: #252538;
+  --el-table-border-color: #2d3748;
+  --el-table-text-color: #e2e8f0;
+  --el-table-header-text-color: #a0aec0;
+  --el-fill-color-lighter: #252538;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 /* 响应式布局 */

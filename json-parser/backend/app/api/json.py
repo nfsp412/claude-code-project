@@ -11,6 +11,7 @@ from app.utils.json_utils import (
     validate_json,
     get_json_size,
     get_json_line_count,
+    validate_column_order,
 )
 
 router = APIRouter(prefix="/api/json", tags=["json"])
@@ -56,6 +57,28 @@ class LinesResponse(BaseModel):
 class ErrorResponse(BaseModel):
     """Error response model."""
     detail: str = Field(..., description="Error message")
+
+
+class ColumnMismatch(BaseModel):
+    """A single column position where reader and writer differ."""
+    position: int = Field(..., description="1-based position index")
+    reader_field: str | None = Field(None, description="Reader column name (None if missing)")
+    writer_field: str | None = Field(None, description="Writer column name (None if missing)")
+
+
+class ContentValidateResult(BaseModel):
+    """Validation result for a single content item."""
+    index: int = Field(..., description="Index in the content array")
+    valid: bool
+    reader_count: int
+    writer_count: int
+    mismatches: list[ColumnMismatch]
+
+
+class ColumnValidateResponse(BaseModel):
+    """Response model for column order validation."""
+    valid: bool = Field(..., description="True if all content items have matching column order")
+    results: list[ContentValidateResult]
 
 
 @router.post("/format", response_model=FormatResponse, responses={400: {"model": ErrorResponse}})
@@ -124,5 +147,35 @@ async def lines_endpoint(request: JsonRequest):
     try:
         lines = get_json_line_count(request.json_str)
         return LinesResponse(lines=lines)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post(
+    "/validate-columns",
+    response_model=ColumnValidateResponse,
+    responses={400: {"model": ErrorResponse}},
+)
+async def validate_columns_endpoint(request: JsonRequest):
+    """
+    Validate that reader and writer column orders match in a DataX job config.
+
+    - **json**: A DataX job configuration JSON string
+    """
+    try:
+        result = validate_column_order(request.json_str)
+        return ColumnValidateResponse(
+            valid=result["valid"],
+            results=[
+                ContentValidateResult(
+                    index=r["index"],
+                    valid=r["valid"],
+                    reader_count=r["reader_count"],
+                    writer_count=r["writer_count"],
+                    mismatches=[ColumnMismatch(**m) for m in r["mismatches"]],
+                )
+                for r in result["results"]
+            ],
+        )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

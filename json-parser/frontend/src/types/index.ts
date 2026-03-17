@@ -39,3 +39,23 @@ export interface Notification {
 
 // 结果类型
 export type Result<T> = { success: true; data: T } | { success: false; error: string };
+
+// 字段校验相关类型
+export interface ColumnMismatch {
+  position: number;
+  reader_field: string | null;
+  writer_field: string | null;
+}
+
+export interface ContentValidateResult {
+  index: number;
+  valid: boolean;
+  reader_count: number;
+  writer_count: number;
+  mismatches: ColumnMismatch[];
+}
+
+export interface ColumnValidateResponse {
+  valid: boolean;
+  results: ContentValidateResult[];
+}

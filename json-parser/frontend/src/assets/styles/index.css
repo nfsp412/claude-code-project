@@ -262,6 +262,34 @@ body {
   animation: slideIn 0.3s ease-out;
 }
 
+/* 玻璃态下拉面板（el-select popper 弹出层） */
+.glass-popper {
+  background: rgba(30, 30, 50, 0.85) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.glass-popper .el-select-dropdown__item {
+  color: #e2e8f0;
+}
+
+.glass-popper .el-select-dropdown__item.is-hovering {
+  background: rgba(138, 158, 255, 0.1);
+}
+
+.glass-popper .el-select-dropdown__item.selected,
+.glass-popper .el-select-dropdown__item.is-selected {
+  color: #8a9eff;
+  background: rgba(138, 158, 255, 0.15);
+}
+
+.glass-popper .el-popper__arrow::before {
+  background: rgba(30, 30, 50, 0.85) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
 /* 响应式断点 */
 @media (max-width: 768px) {
   .container {
