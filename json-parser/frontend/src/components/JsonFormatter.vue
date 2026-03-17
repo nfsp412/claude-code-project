@@ -11,7 +11,7 @@ const selectedSample = ref('');
 const output = ref('');
 const isValid = ref(true);
 const errorMessage = ref('');
-const indent = ref(2);
+const indent = ref<string | number>(2);
 
 // 状态：大小和行数
 const inputSize = ref(0);
@@ -171,22 +171,30 @@ const loadSample = (sampleKey: string) => {
       <div v-if="!isValid" class="error-message">
         {{ errorMessage }}
       </div>
-      <div class="button-group">
-        <el-button
-          type="primary"
-          :icon="MagicStick"
-          class="format-btn"
-          @click="formatJson"
-        >
-          格式化
-        </el-button>
-        <el-button
-          :icon="DocumentDelete"
-          class="clear-btn"
-          @click="clearAll"
-        >
-          清空
-        </el-button>
+      <div class="action-row">
+        <el-select v-model="indent" placeholder="选择缩进" class="indent-select">
+          <el-option label="1 个制表符" value="tab" />
+          <el-option label="2 个空格" :value="2" />
+          <el-option label="4 个空格" :value="4" />
+          <el-option label="8 个空格" :value="8" />
+        </el-select>
+        <div class="button-group">
+          <el-button
+            type="primary"
+            :icon="MagicStick"
+            class="format-btn"
+            @click="formatJson"
+          >
+            格式化
+          </el-button>
+          <el-button
+            :icon="DocumentDelete"
+            class="clear-btn"
+            @click="clearAll"
+          >
+            清空
+          </el-button>
+        </div>
       </div>
     </div>
 
@@ -273,16 +281,29 @@ const loadSample = (sampleKey: string) => {
   width: 120px;
 }
 
-:deep(.sample-select .el-input__wrapper) {
-  background: rgba(255, 255, 255, 0.05);
-  box-shadow: none;
+:deep(.sample-select .el-input .el-input__wrapper) {
+  background: #252538 !important;
+  border: 1px solid #3d3d5c !important;
+  box-shadow: none !important;
+  border-radius: 6px;
+  transition: all 0.2s ease;
 }
 
-:deep(.sample-select .el-input__inner) {
+:deep(.sample-select .el-input .el-input__wrapper:hover) {
+  background: #2a2a40 !important;
+  border-color: #505070 !important;
+}
+
+:deep(.sample-select .el-input .el-input__wrapper.is-focus) {
+  border-color: #7070a0 !important;
+  box-shadow: 0 0 0 2px rgba(112, 112, 160, 0.2) !important;
+}
+
+:deep(.sample-select .el-input .el-input__inner) {
   color: #e2e8f0;
 }
 
-:deep(.sample-select .el-input__inner::placeholder) {
+:deep(.sample-select .el-input .el-input__inner::placeholder) {
   color: #a0aec0;
 }
 
@@ -336,20 +357,52 @@ const loadSample = (sampleKey: string) => {
   border-left: 3px solid #f87171;
 }
 
+.action-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.indent-select {
+  width: 150px;
+}
+
+:deep(.indent-select .el-input .el-input__wrapper) {
+  background: #252538 !important;
+  border: 1px solid #3d3d5c !important;
+  box-shadow: none !important;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+:deep(.indent-select .el-input .el-input__wrapper:hover) {
+  background: #2a2a40 !important;
+  border-color: #505070 !important;
+}
+
+:deep(.indent-select .el-input .el-input__wrapper.is-focus) {
+  border-color: #7070a0 !important;
+  box-shadow: 0 0 0 2px rgba(112, 112, 160, 0.2) !important;
+}
+
+:deep(.indent-select .el-input .el-input__inner) {
+  color: #e2e8f0;
+}
+
 .button-group {
   display: flex;
   gap: 0.75rem;
 }
 
 .format-btn {
-  background-color: #a0aec0 !important;
-  border-color: #a0aec0 !important;
+  background-color: #3b82f6 !important;
+  border-color: #3b82f6 !important;
   color: #fff !important;
 }
 
 .format-btn:hover {
-  background-color: #909eb0 !important;
-  border-color: #909eb0 !important;
+  background-color: #2563eb !important;
+  border-color: #2563eb !important;
 }
 
 .clear-btn {

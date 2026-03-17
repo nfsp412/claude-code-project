@@ -18,10 +18,10 @@ export const jsonApi = {
   /**
    * 格式化 JSON
    * @param json JSON 字符串
-   * @param indent 缩进空格数，默认 2
+   * @param indent 缩进空格数或制表符，默认 2
    * @returns 格式化后的 JSON 字符串
    */
-  format(json: string, indent: number = 2): Promise<string> {
+  format(json: string, indent: number | string = 2): Promise<string> {
     return api.post('/format', { json, indent })
       .then(res => res.data.formatted)
   },

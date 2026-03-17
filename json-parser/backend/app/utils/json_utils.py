@@ -3,13 +3,13 @@
 import json
 
 
-def format_json(json_str: str, indent: int = 2) -> str:
+def format_json(json_str: str, indent: int | str = 2) -> str:
     """
     Format a JSON string with proper indentation.
 
     Args:
         json_str: The JSON string to format
-        indent: Number of spaces for indentation (default: 2)
+        indent: Number of spaces for indentation (default: 2), or "tab" for tab indentation
 
     Returns:
         Formatted JSON string
@@ -19,6 +19,8 @@ def format_json(json_str: str, indent: int = 2) -> str:
     """
     try:
         parsed = json.loads(json_str)
+        if indent == "tab":
+            return json.dumps(parsed, indent="\t", ensure_ascii=False)
         return json.dumps(parsed, indent=indent, ensure_ascii=False)
     except json.JSONDecodeError as e:
         raise ValueError(f"Invalid JSON: {e}")

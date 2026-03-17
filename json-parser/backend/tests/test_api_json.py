@@ -26,6 +26,56 @@ class TestJsonApiEndpoints(unittest.TestCase):
         self.assertIn("formatted", data)
         self.assertIn('"name": "John"', data["formatted"])
 
+    def test_format_api_with_tab_indent(self):
+        """Test format endpoint with tab indentation."""
+        response = self.client.post(
+            "/api/json/format",
+            json={"json": '{"name":"John","age":30}', "indent": "tab"}
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn("formatted", data)
+        self.assertIn("\t\"name\"", data["formatted"])
+
+    def test_format_api_with_all_indent_options(self):
+        """Test format endpoint with all indentation options."""
+        json_str = '{"key":"value"}'
+
+        # 测试 1 空格
+        response = self.client.post(
+            "/api/json/format",
+            json={"json": json_str, "indent": 1}
+        )
+        self.assertEqual(response.status_code, 200)
+
+        # 测试 2 空格
+        response = self.client.post(
+            "/api/json/format",
+            json={"json": json_str, "indent": 2}
+        )
+        self.assertEqual(response.status_code, 200)
+
+        # 测试 4 空格
+        response = self.client.post(
+            "/api/json/format",
+            json={"json": json_str, "indent": 4}
+        )
+        self.assertEqual(response.status_code, 200)
+
+        # 测试 8 空格
+        response = self.client.post(
+            "/api/json/format",
+            json={"json": json_str, "indent": 8}
+        )
+        self.assertEqual(response.status_code, 200)
+
+        # 测试制表符
+        response = self.client.post(
+            "/api/json/format",
+            json={"json": json_str, "indent": "tab"}
+        )
+        self.assertEqual(response.status_code, 200)
+
     def test_format_api_invalid(self):
         """Test format endpoint with invalid JSON."""
         response = self.client.post(

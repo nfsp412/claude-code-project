@@ -1,5 +1,7 @@
 """JSON API routes for FastAPI application."""
 
+from typing import Literal, Union
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
@@ -22,7 +24,7 @@ class JsonRequest(BaseModel):
 class JsonFormatRequest(BaseModel):
     """Request model for JSON format operation with optional indent."""
     json_str: str = Field(..., alias="json", description="The JSON string to format")
-    indent: int = Field(default=2, ge=1, le=8, description="Indentation spaces (1-8)")
+    indent: Union[int, Literal["tab"]] = Field(default=2, description="Indentation: 1, 2, 4, 8, or 'tab'")
 
 
 class FormatResponse(BaseModel):
@@ -62,7 +64,7 @@ async def format_endpoint(request: JsonFormatRequest):
     Format a JSON string with proper indentation.
 
     - **json**: The JSON string to format
-    - **indent**: Optional indentation spaces (default: 2, range: 1-8)
+    - **indent**: Optional indentation (default: 2, options: 1, 2, 4, 8, 'tab')
     """
     try:
         formatted = format_json(request.json_str, request.indent)

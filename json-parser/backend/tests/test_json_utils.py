@@ -28,6 +28,23 @@ class TestFormatJson(unittest.TestCase):
         # Check that 4-space indentation is used
         self.assertIn('    "name"', result)
 
+    def test_format_json_with_tab_indent(self):
+        """Test formatting JSON with tab indentation."""
+        json_str = '{"name":"John","age":30}'
+        result = format_json(json_str, indent="tab")
+        # 制表符缩进应该使用 \t 而不是空格
+        self.assertIn("\t\"name\"", result)
+        self.assertTrue(result.startswith("{\n\t"))
+
+    def test_format_json_with_tab_indent_nested(self):
+        """Test formatting nested JSON with tab indentation."""
+        json_str = '{"user":{"name":"John","address":{"city":"NYC"}}}'
+        result = format_json(json_str, indent="tab")
+        # 检查嵌套结构使用制表符
+        self.assertIn("\t\"user\"", result)
+        self.assertIn("\t\t\"name\"", result)
+        self.assertIn("\t\t\t\"city\"", result)
+
     def test_format_json_invalid(self):
         """Test that invalid JSON raises ValueError."""
         json_str = '{"name": "John",}'
