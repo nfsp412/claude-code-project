@@ -55,6 +55,10 @@ watch(output, (newVal) => {
 
 // 格式化 JSON
 const formatJson = async () => {
+  // 空输入时不执行任何操作，不显示错误
+  if (!input.value || !input.value.trim()) {
+    return;
+  }
   try {
     const result = await jsonApi.validate(input.value);
     if (result.valid) {
@@ -73,6 +77,10 @@ const formatJson = async () => {
 
 // 压缩 JSON
 const minifyJson = async () => {
+  // 空输入时不执行任何操作，不显示错误
+  if (!input.value || !input.value.trim()) {
+    return;
+  }
   try {
     const result = await jsonApi.validate(input.value);
     if (result.valid) {
