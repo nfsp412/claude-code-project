@@ -342,14 +342,14 @@ const loadSample = (sampleKey: string) => {
 }
 
 .format-btn {
-  background-color: #8a9eff !important;
-  border-color: #8a9eff !important;
+  background-color: #a0aec0 !important;
+  border-color: #a0aec0 !important;
   color: #fff !important;
 }
 
 .format-btn:hover {
-  background-color: #7a8eef !important;
-  border-color: #7a8eef !important;
+  background-color: #909eb0 !important;
+  border-color: #909eb0 !important;
 }
 
 .clear-btn {

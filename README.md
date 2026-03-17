@@ -24,6 +24,7 @@
 - /help 
 - /clear 清除上下文
 - /compact 压缩上下文
+- /mcp 查看添加的mcp服务器
 
 ### 常用技巧
 
@@ -39,3 +40,13 @@
 - @json-parser/ 这个代码库是怎样执行的
 - 初始化git仓库并提交
 - add和commit这些更改
+- 使用 playwright 这个 mcp 服务器,访问 localhost:5173 我希望格式化按钮的颜色和清空按钮的颜色一致
+
+### MCP
+
+- 模型上下文协议
+- claude code可以接入其他MCP服务器,增强功能
+- 以playwright为例
+    - 添加: claude mcp add playwrite npx @playwright/mcp@latest
+    - 查看: /mcp
+    - 使用: 使用 playwright 这个 mcp 服务器,访问 localhost:5173 我希望格式化按钮的颜色和清空按钮的颜色一致
