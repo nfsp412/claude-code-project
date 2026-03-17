@@ -38,3 +38,4 @@
 - @json-parser/ 浏览这个代码库
 - @json-parser/ 这个代码库是怎样执行的
 - 初始化git仓库并提交
+- add和commit这些更改
