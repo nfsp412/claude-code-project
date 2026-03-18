@@ -6,7 +6,7 @@
 - npm install -g @anthropic-ai/claude-code
 - claude --version
 - 配置api key
-- npx @z_ai/coding-helper
+- npx @z_ai/coding-helper 这是GLM的自动化助手,可以手动编辑 `~/.claude/settings.json` 文件
 - claude
 
 ### 内置工具
@@ -26,6 +26,7 @@
 - /compact 压缩上下文
 - /mcp 查看添加的mcp服务器
 - /permissions 权限设置
+- /hooks 钩子
 
 ### 常用技巧
 
@@ -74,3 +75,39 @@
 - 同时在多个工作树目录下打开终端,运行claude
 - 各自提交git后,在主分支进入claude进行合并
     - 使用 git merge 命令合并在 .tree 目录下的所有worktree,如果有冲突则尝试修复冲突
+
+### github集成
+
+- 调用 /install-github-app 命令安装相关组件
+    - 一般会要求你先安装github cli,可以使用 brew install gh 命令安装
+    - gh auth login 
+    - gh auth refresh -h github.com -s repo,workflow
+- 可以实现github在线解决issue的功能,需要官方订阅或者API付费
+
+### 钩子集成
+
+- /hooks
+- 有触发钩子的不同生命周期位置
+- 演示示例
+    - 选择post tool use 工具使用后触发钩子
+    - 选择 Read 命令,代表执行该命令后触发钩子
+    - 钩子设置为 say 'All Done'
+    - 注意需要添加到 `./.claude/settings.json` 文件
+```json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "say 'All Done'"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
