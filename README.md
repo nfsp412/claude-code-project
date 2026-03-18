@@ -25,6 +25,7 @@
 - /clear 清除上下文
 - /compact 压缩上下文
 - /mcp 查看添加的mcp服务器
+- /permissions 权限设置
 
 ### 常用技巧
 
@@ -58,8 +59,18 @@
     - 添加: claude mcp add playwrite npx @playwright/mcp@latest
     - 查看: /mcp
     - 使用: 使用 playwright 这个 mcp 服务器,访问 localhost:5173 我希望格式化按钮的颜色和清空按钮的颜色一致
+    - 结合claude的plan一起使用,触发mcp功能
 
 ### 新增功能
 
 - 创建 .claude/commands/xxx.md文件 该文件会自动添加到claude中,使用/可以获取到自定义的功能
 - 具体功能的编写格式,可以参考 [text](.claude/commands/implements-features.md)
+
+### 多claude运行
+
+- 需要结合git的工作树实现,避免产生代码冲突覆盖的问题
+    - git worktree add .tree/ui_feature
+    - git branch -a
+- 同时在多个工作树目录下打开终端,运行claude
+- 各自提交git后,在主分支进入claude进行合并
+    - 使用 git merge 命令合并在 .tree 目录下的所有worktree,如果有冲突则尝试修复冲突
