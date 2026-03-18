@@ -41,6 +41,14 @@
 - 初始化git仓库并提交
 - add和commit这些更改
 - 使用 playwright 这个 mcp 服务器,访问 localhost:5173 我希望格式化按钮的颜色和清空按钮的颜色一致
+- think a lot: 触发深度思考,Flambéing… (thinking) 和 Doing… (thinking) 的区别
+- 在代码重构时,可以参考如下的提示词写法:
+    - Current behavior 
+    - Desired behavior 
+    - Example flow 
+    - Requirements 
+    - Notes 例如修改哪个文件,可以在这里指定
+    - 使用两个子代理去头脑风暴可能的计划,先不要实现代码 可以触发使用两个并行子任务task去进行plan
 
 ### MCP
 
@@ -50,3 +58,8 @@
     - 添加: claude mcp add playwrite npx @playwright/mcp@latest
     - 查看: /mcp
     - 使用: 使用 playwright 这个 mcp 服务器,访问 localhost:5173 我希望格式化按钮的颜色和清空按钮的颜色一致
+
+### 新增功能
+
+- 创建 .claude/commands/xxx.md文件 该文件会自动添加到claude中,使用/可以获取到自定义的功能
+- 具体功能的编写格式,可以参考 [text](.claude/commands/implements-features.md)
