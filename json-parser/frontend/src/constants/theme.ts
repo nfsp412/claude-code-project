@@ -10,3 +10,29 @@ export const THEME = {
     desktop: '1000px'
   }
 };
+
+// 主题颜色定义
+export const themeColors = {
+  dark: {
+    bgPrimary: '#1a1a2e',
+    bgSecondary: '#16213e',
+    bgTertiary: '#0f3460',
+    textPrimary: '#e2e8f0',
+    textSecondary: '#a0aec0',
+    border: 'rgba(255, 255, 255, 0.1)',
+    cardBg: 'rgba(255, 255, 255, 0.05)',
+    inputBg: '#1a1a2e',
+    accent: '#8a9eff'
+  },
+  light: {
+    bgPrimary: '#f5f7fa',
+    bgSecondary: '#e4e7ed',
+    bgTertiary: '#dcdfe6',
+    textPrimary: '#2c3e50',
+    textSecondary: '#606266',
+    border: '#dcdfe6',
+    cardBg: '#ffffff',
+    inputBg: '#ffffff',
+    accent: '#409eff'
+  }
+};

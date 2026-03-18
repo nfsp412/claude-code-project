@@ -1,10 +1,116 @@
-# Frontend Code Quality Tools
+# 前端变更说明
+
+本文档记录了 JSON Formatter 前端项目的所有重要变更。
+
+---
+
+## 1. 暗黑/亮色主题切换功能
+
+### 概述
+为 JSON 格式化工具添加了暗黑/亮色主题切换功能，用户可以通过页面右上角的按钮在两种主题之间切换。
+
+### 变更内容
+
+#### 1.1 `src/constants/theme.ts`
+- 添加了 `themeColors` 对象，定义了暗黑和亮色主题的颜色配置
+- 暗黑主题：深色背景 (#1a1a2e)，浅色文本 (#e2e8f0)
+- 亮色主题：浅色背景 (#f5f7fa)，深色文本 (#2c3e50)
+
+#### 1.2 `src/App.vue`
+**新增功能：**
+- 添加主题状态 `isDark` (默认 `true`，暗黑模式)
+- 支持从 `localStorage` 读取用户偏好
+- 支持检测系统深色模式偏好
+- 主题切换时自动保存到 `localStorage`
+- 添加 `provide('isDark', isDark)` 向子组件提供主题状态
+
+**UI 变更：**
+- 在页头右上角添加主题切换按钮
+  - 暗黑模式下显示太阳图标 (Sunny)
+  - 亮色模式下显示月亮图标 (Moon)
+  - 按钮使用圆形设计，带有毛玻璃效果
+  - 悬停时有缩放动画效果
+
+**样式变更：**
+- 添加 `.dark` 和 `:not(.dark)` 选择器区分两种主题
+- 暗黑主题：深蓝渐变背景，紫色点缀
+- 亮色主题：浅灰渐变背景，蓝色点缀
+- 所有颜色过渡添加 `transition: all 0.3s ease` 动画
+
+#### 1.3 `src/components/JsonFormatter.vue`
+**新增功能：**
+- 通过 `inject('isDark')` 获取父组件的主题状态
+- 添加 `isDarkMode` 计算属性
+- 根元素添加 `light-theme` 类用于样式控制
+
+**样式变更：**
+- 所有主要样式添加亮色主题覆盖
+- 编辑器区域：亮色主题下使用白色背景和深色文本
+- 下拉选择器：亮色主题下使用白色背景和 Element Plus 默认样式
+- 统计标签：亮色主题下调整颜色
+- 弹窗：亮色主题下使用白色背景
+- 表格：亮色主题下使用浅灰色表头
+- 所有过渡添加动画效果
+
+### 技术细节
+
+#### 主题持久化
+```typescript
+// 读取保存的主题或系统偏好
+const savedTheme = localStorage.getItem('theme');
+if (savedTheme) {
+  isDark.value = savedTheme === 'dark';
+}
+
+// 保存主题变化
+watch(isDark, (newVal) => {
+  localStorage.setItem('theme', newVal ? 'dark' : 'light');
+});
+```
+
+#### 主题传递
+```typescript
+// App.vue 提供
+provide('isDark', isDark);
+
+// JsonFormatter.vue 注入
+const isDark = inject('isDark', ref(true));
+const isDarkMode = computed(() => isDark.value);
+```
+
+#### CSS 变量覆盖模式
+使用 `.light-theme` 类选择器覆盖暗黑主题样式：
+```css
+.json-formatter.light-theme .section-title {
+  color: #2c3e50;
+}
+
+.json-formatter.light-theme .json-editor {
+  background: #ffffff;
+  color: #2c3e50;
+}
+```
+
+### 用户体验
+- 默认使用暗黑模式
+- 自动记住用户选择
+- 平滑的过渡动画
+- 响应式设计：移动端主题按钮位置自动调整
+
+### 兼容性
+- 支持现代浏览器
+- 支持系统深色模式检测
+- 移动端自适应布局
+
+---
+
+## 2. 代码质量工具
 
 本文档记录了为 JSON Formatter 前端项目添加的代码质量工具。
 
-## 添加的工具
+### 添加的工具
 
-### 1. ESLint - 代码静态分析
+#### 2.1 ESLint - 代码静态分析
 
 **配置文件**: `.eslintrc.cjs`
 
@@ -21,7 +127,7 @@
   - `@typescript-eslint/no-explicit-any`: warn - 警告使用 any 类型
   - `@typescript-eslint/no-unused-vars`: error - 禁止未使用的变量（下划线开头的参数除外）
 
-### 2. Prettier - 代码格式化
+#### 2.2 Prettier - 代码格式化
 
 **配置文件**: `.prettierrc`
 
@@ -39,7 +145,7 @@
 
 **忽略文件**: `.prettierignore`
 
-### 3. Husky - Git Hooks
+#### 2.3 Husky - Git Hooks
 
 **配置目录**: `.husky/`
 
@@ -47,7 +153,7 @@
 
 - **pre-commit hook**: 提交前运行 `lint-staged`
 
-### 4. lint-staged - 暂存文件检查
+#### 2.4 lint-staged - 暂存文件检查
 
 **配置位置**: `package.json`
 
@@ -62,7 +168,7 @@
 }
 ```
 
-## NPM Scripts
+### NPM Scripts
 
 | 命令 | 说明 |
 |------|------|
@@ -73,9 +179,9 @@
 | `npm run type-check` | TypeScript 类型检查 |
 | `npm run prepare` | 安装 Husky hooks（npm install 后自动运行） |
 
-## 开发流程
+### 开发流程
 
-### 本地开发
+#### 本地开发
 
 1. 安装依赖：
    ```bash
@@ -87,7 +193,7 @@
    - 保存文件时自动格式化（需配置编辑器）
    - 提交时自动运行 lint 和 format
 
-### 编辑器集成
+#### 编辑器集成
 
 **VS Code 推荐设置** (`.vscode/settings.json`):
 
@@ -102,7 +208,7 @@
 }
 ```
 
-### CI/CD 检查
+#### CI/CD 检查
 
 在 CI 流程中运行：
 
@@ -113,7 +219,7 @@ npm run type-check
 npm run build
 ```
 
-## 依赖版本
+### 依赖版本
 
 | 包 | 版本 |
 |----|------|
@@ -126,7 +232,7 @@ npm run build
 | husky | ^9.0.11 |
 | lint-staged | ^15.2.2 |
 
-## 文件清单
+### 文件清单
 
 ```
 json-parser/frontend/
@@ -138,9 +244,9 @@ json-parser/frontend/
 └── package.json           # 添加 lint/format scripts 和 lint-staged 配置
 ```
 
-## 使用说明
+### 使用说明
 
-### 首次设置
+#### 首次设置
 
 ```bash
 cd json-parser/frontend
@@ -148,7 +254,7 @@ npm install
 # Husky 会自动通过 prepare 脚本安装
 ```
 
-### 手动运行检查
+#### 手动运行检查
 
 ```bash
 # 检查并修复所有文件
@@ -160,7 +266,7 @@ npm run lint:check
 npm run format:check
 ```
 
-### 提交代码
+#### 提交代码
 
 提交时会自动：
 1. 检查暂存文件的 ESLint 规则
@@ -168,7 +274,7 @@ npm run format:check
 3. 用 Prettier 格式化代码
 4. 如果有无法自动修复的错误，提交会被阻止
 
-## 最佳实践
+### 最佳实践
 
 1. **保存时格式化**: 配置编辑器在保存时运行 Prettier
 2. **小步提交**: 频繁提交，每次提交只包含相关改动
