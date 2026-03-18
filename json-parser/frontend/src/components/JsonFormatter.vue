@@ -1,10 +1,14 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, inject, computed } from 'vue';
 import { jsonApi } from '../api/json';
 import { DocumentCopy, DocumentDelete, MagicStick, Minus, Select } from '@element-plus/icons-vue';
 import { ElMessage, ElSelect, ElOption } from 'element-plus';
 import { jsonSamples } from '../data/samples';
 import type { ContentValidateResult, ColumnMismatch } from '../types';
+
+// 注入主题状态
+const isDark = inject('isDark', ref(true));
+const isDarkMode = computed(() => isDark.value);
 
 const input = ref('');
 const selectedSample = ref('');
@@ -151,7 +155,7 @@ const getMismatchStatus = (m: ColumnMismatch): string => {
 </script>
 
 <template>
-  <div class="json-formatter">
+  <div class="json-formatter" :class="{ 'light-theme': !isDarkMode }">
     <!-- 输入区域 -->
     <div class="formatter-section input-section">
       <div class="section-header">
@@ -318,6 +322,12 @@ const getMismatchStatus = (m: ColumnMismatch): string => {
   width: 100%;
   height: 100%;
   padding: 1rem;
+  transition: all 0.3s ease;
+}
+
+/* 亮色主题 */
+.json-formatter.light-theme {
+  background: rgba(255, 255, 255, 0.5);
 }
 
 .formatter-section {
@@ -338,6 +348,11 @@ const getMismatchStatus = (m: ColumnMismatch): string => {
   font-size: 1.1rem;
   font-weight: 600;
   color: #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.json-formatter.light-theme .section-title {
+  color: #2c3e50;
 }
 
 .header-right {
@@ -383,12 +398,41 @@ const getMismatchStatus = (m: ColumnMismatch): string => {
   color: #a0aec0;
 }
 
+/* 亮色主题下的下拉框 */
+.json-formatter.light-theme :deep(.sample-select .el-input .el-input__wrapper) {
+  background: #ffffff !important;
+  border: 1px solid #dcdfe6 !important;
+}
+
+.json-formatter.light-theme :deep(.sample-select .el-input .el-input__wrapper:hover) {
+  border-color: #409eff !important;
+}
+
+.json-formatter.light-theme :deep(.sample-select .el-input .el-input__wrapper.is-focus) {
+  border-color: #409eff !important;
+  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2) !important;
+}
+
+.json-formatter.light-theme :deep(.sample-select .el-input .el-input__inner) {
+  color: #2c3e50;
+}
+
+.json-formatter.light-theme :deep(.sample-select .el-input .el-input__inner::placeholder) {
+  color: #a8abb2;
+}
+
 .stat {
   font-size: 0.85rem;
   color: #a0aec0;
   background: rgba(160, 174, 192, 0.1);
   padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
+  transition: all 0.3s ease;
+}
+
+.json-formatter.light-theme .stat {
+  color: #606266;
+  background: rgba(96, 98, 102, 0.1);
 }
 
 .editor-container {
@@ -413,7 +457,7 @@ const getMismatchStatus = (m: ColumnMismatch): string => {
   line-height: 1.6;
   resize: none;
   outline: none;
-  transition: border-color 0.2s;
+  transition: all 0.2s;
 }
 
 .json-editor:focus {
@@ -424,6 +468,22 @@ const getMismatchStatus = (m: ColumnMismatch): string => {
   color: #4a5568;
 }
 
+/* 亮色主题下的编辑器 */
+.json-formatter.light-theme .json-editor {
+  background: #ffffff;
+  color: #2c3e50;
+  border: 1px solid #dcdfe6;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.json-formatter.light-theme .json-editor:focus {
+  border-color: #409eff;
+}
+
+.json-formatter.light-theme .json-editor::placeholder {
+  color: #c0c4cc;
+}
+
 .error-message {
   color: #f87171;
   font-size: 0.9rem;
@@ -431,6 +491,11 @@ const getMismatchStatus = (m: ColumnMismatch): string => {
   background: rgba(248, 113, 113, 0.1);
   border-radius: 0.25rem;
   border-left: 3px solid #f87171;
+  transition: all 0.3s ease;
+}
+
+.json-formatter.light-theme .error-message {
+  background: rgba(245, 108, 108, 0.1);
 }
 
 .action-row {
@@ -465,6 +530,25 @@ const getMismatchStatus = (m: ColumnMismatch): string => {
 
 :deep(.indent-select .el-input .el-input__inner) {
   color: #e2e8f0;
+}
+
+/* 亮色主题下的缩进选择器 */
+.json-formatter.light-theme :deep(.indent-select .el-input .el-input__wrapper) {
+  background: #ffffff !important;
+  border: 1px solid #dcdfe6 !important;
+}
+
+.json-formatter.light-theme :deep(.indent-select .el-input .el-input__wrapper:hover) {
+  border-color: #409eff !important;
+}
+
+.json-formatter.light-theme :deep(.indent-select .el-input .el-input__wrapper.is-focus) {
+  border-color: #409eff !important;
+  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2) !important;
+}
+
+.json-formatter.light-theme :deep(.indent-select .el-input .el-input__inner) {
+  color: #2c3e50;
 }
 
 .button-group {
@@ -527,7 +611,7 @@ const getMismatchStatus = (m: ColumnMismatch): string => {
   border-color: #0da86e !important;
 }
 
-/* 字段校验弹窗 */
+/* 字段校验弹窗 - 暗黑主题 */
 :deep(.column-dialog .el-dialog) {
   background: #1e1e30 !important;
   border: 1px solid #2d3748;
@@ -553,6 +637,28 @@ const getMismatchStatus = (m: ColumnMismatch): string => {
   color: #a0aec0;
 }
 
+/* 亮色主题下的弹窗 */
+.json-formatter.light-theme :deep(.column-dialog .el-dialog) {
+  background: #ffffff !important;
+  border: 1px solid #e4e7ed;
+}
+
+.json-formatter.light-theme :deep(.column-dialog .el-dialog__header) {
+  border-bottom: 1px solid #e4e7ed;
+}
+
+.json-formatter.light-theme :deep(.column-dialog .el-dialog__title) {
+  color: #2c3e50;
+}
+
+.json-formatter.light-theme :deep(.column-dialog .el-dialog__body) {
+  color: #2c3e50;
+}
+
+.json-formatter.light-theme :deep(.column-dialog .el-dialog__headerbtn .el-dialog__close) {
+  color: #606266;
+}
+
 .content-result {
   margin-bottom: 1.5rem;
 }
@@ -571,6 +677,11 @@ const getMismatchStatus = (m: ColumnMismatch): string => {
 .content-index {
   font-weight: 600;
   color: #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.json-formatter.light-theme .content-index {
+  color: #2c3e50;
 }
 
 .content-status {
@@ -594,11 +705,21 @@ const getMismatchStatus = (m: ColumnMismatch): string => {
   font-size: 0.8rem;
   color: #a0aec0;
   margin-left: auto;
+  transition: all 0.3s ease;
+}
+
+.json-formatter.light-theme .content-count {
+  color: #606266;
 }
 
 .field-missing {
   color: #a0aec0;
   font-style: italic;
+  transition: all 0.3s ease;
+}
+
+.json-formatter.light-theme .field-missing {
+  color: #909399;
 }
 
 :deep(.mismatch-table) {
@@ -612,6 +733,18 @@ const getMismatchStatus = (m: ColumnMismatch): string => {
   --el-fill-color-lighter: #252538;
   border-radius: 8px;
   overflow: hidden;
+}
+
+/* 亮色主题下的表格 */
+.json-formatter.light-theme :deep(.mismatch-table) {
+  --el-table-bg-color: #ffffff;
+  --el-table-tr-bg-color: #ffffff;
+  --el-table-header-bg-color: #f5f7fa;
+  --el-table-row-hover-bg-color: #f5f7fa;
+  --el-table-border-color: #e4e7ed;
+  --el-table-text-color: #2c3e50;
+  --el-table-header-text-color: #606266;
+  --el-fill-color-lighter: #f5f7fa;
 }
 
 /* 响应式布局 */
