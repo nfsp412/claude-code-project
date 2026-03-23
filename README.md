@@ -115,3 +115,9 @@
 
 - 可以将jupyter文件直接转换成仪表盘
 - 使用streamlit转换成仪表盘
+
+### figma操作
+
+- 添加figma的mcp服务器 claude mcp add --transport http figma-dev-mode-mcp-server http://localhost:3000/mcp
+- 需要专业版账号
+
