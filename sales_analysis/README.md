@@ -9,17 +9,33 @@ sales_analysis/
 ├── __init__.py           # 模块初始化文件
 ├── data_loader.py        # 数据加载模块
 ├── business_calc.py      # 业务计算模块
+├── dashboard.py          # Streamlit 仪表盘
 ├── sales_analysis.ipynb  # 分析笔记本
+├── requirements.txt      # Streamlit 依赖
 └── README.md             # 本文档
 ```
 
 ## 安装依赖
 
+### 基础依赖（用于 notebook 和模块）
+
 ```bash
 pip install pandas numpy matplotlib seaborn openpyxl
 ```
 
+### Streamlit 仪表盘依赖
+
+```bash
+# 使用 requirements.txt 安装
+pip install -r requirements.txt
+
+# 或手动安装
+pip install streamlit pandas numpy matplotlib seaborn openpyxl
+```
+
 ## 快速开始
+
+### Python 模块使用
 
 ```python
 from sales_analysis.data_loader import SalesDataLoader
@@ -39,7 +55,50 @@ calculator = SalesMetricsCalculator(
 metrics = calculator.get_summary_metrics()
 ```
 
+### Streamlit 仪表盘
+
+运行交互式仪表盘：
+
+```bash
+# 进入销售分析目录
+cd sales_analysis
+
+# 激活虚拟环境（如果已创建）
+source venv/bin/activate
+
+# 启动 Streamlit
+streamlit run dashboard.py
+```
+
+仪表盘将在浏览器中打开，默认地址：http://localhost:8501
+
 ## 模块说明
+
+### 3. dashboard.py - Streamlit 仪表盘
+
+交互式 Web 仪表盘，将 Jupyter notebook 转换为可交互的 Streamlit 应用。
+
+#### 功能页面
+
+| 页面 | 功能 |
+|------|------|
+| 首页 | 数据概览和关键发现 |
+| 核心业务指标 | KPI 指标卡片和明细 |
+| 区域销售分析 | 区域销售可视化 |
+| 产品分析 | 产品排行和毛利率分析 |
+| 客户分析 | 客户类型消费对比 |
+| 时间趋势分析 | 月度销售趋势 |
+| 产品类别分析 | 类别表现对比 |
+| 数据字典 | 字段说明文档 |
+
+#### 配色方案
+
+仪表盘使用统一的配色方案：
+- 主色调：#2E86AB（蓝色）
+- 辅助色：#A23B72（紫色）
+- 强调色：#F18F01（橙色）
+- 成功色：#2ECC71（绿色）
+- 警告色：#E74C3C（红色）
 
 ### 1. data_loader.py - 数据加载模块
 
@@ -167,6 +226,22 @@ monthly = calculator.get_monthly_trend()
 - 客户类型分析
 - 时间趋势分析
 - 产品类别分析
+
+## Streamlit 仪表盘说明
+
+`dashboard.py` 是将 notebook 转换成的交互式 Streamlit 应用，提供：
+
+- **侧边栏导航**：轻松切换不同分析页面
+- **交互式图表**：所有可视化均可交互
+- **数据表格**：每页展示详细数据表格
+- **中文字体支持**：已配置 macOS 中文字体
+
+### 运行命令
+
+```bash
+cd sales_analysis
+streamlit run dashboard.py
+```
 
 ## 扩展开发
 

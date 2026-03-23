@@ -114,3 +114,4 @@
 ### jupyter操作
 
 - 可以将jupyter文件直接转换成仪表盘
+- 使用streamlit转换成仪表盘
