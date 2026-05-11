@@ -2,7 +2,7 @@
 name = "json-parser-backend"
 version = "1.0.0"
 description = "JSON 处理后端服务"
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.109.0",
     "uvicorn[standard]>=0.27.0",

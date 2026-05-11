@@ -15,8 +15,8 @@ import sys
 # 添加 sales_analysis 目录到路径
 sys.path.insert(0, str(Path(__file__).parent))
 
-from data_loader import SalesDataLoader
-from business_calc import SalesMetricsCalculator
+from sales.sales_analysis.data_loader import SalesDataLoader
+from sales.sales_analysis.business_calc import SalesMetricsCalculator
 
 # 设置中文字体
 plt.rcParams['font.sans-serif'] = ['PingFang SC', 'Hiragino Sans GB', 'Heiti SC', 'Songti SC', 'STFangsong', 'Microsoft YaHei', 'SimHei', 'WenQuanYi Micro Hei', 'sans-serif']

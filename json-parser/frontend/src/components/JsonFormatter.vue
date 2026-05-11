@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, inject, computed } from 'vue';
 import { jsonApi } from '../api/json';
-import { DocumentCopy, DocumentDelete, MagicStick, Minus, Select } from '@element-plus/icons-vue';
+import { DocumentCopy, DocumentDelete, MagicStick, Minus, RefreshRight, Select } from '@element-plus/icons-vue';
 import { ElMessage, ElSelect, ElOption } from 'element-plus';
 import { jsonSamples } from '../data/samples';
 import type { ContentValidateResult, ColumnMismatch } from '../types';
@@ -16,6 +16,8 @@ const output = ref('');
 const isValid = ref(true);
 const errorMessage = ref('');
 const indent = ref<string | number>(2);
+const isMinified = ref(false);
+const preMinifyOutput = ref('');
 
 const inputSize = ref(0);
 const inputLineCount = ref(0);
@@ -34,6 +36,7 @@ const calculateStats = (text: string) => {
 };
 
 watch(input, (newVal) => {
+  isMinified.value = false;
   const stats = calculateStats(newVal);
   inputSize.value = stats.size;
   inputLineCount.value = stats.lines;
@@ -57,6 +60,7 @@ watch(output, (newVal) => {
 });
 
 const formatJson = async () => {
+  isMinified.value = false;
   if (!input.value || !input.value.trim()) {
     return;
   }
@@ -80,12 +84,24 @@ const minifyJson = async () => {
   if (!input.value || !input.value.trim()) {
     return;
   }
+
+  if (isMinified.value) {
+    output.value = preMinifyOutput.value;
+    isMinified.value = false;
+    isValid.value = true;
+    errorMessage.value = '';
+    return;
+  }
+
+  preMinifyOutput.value = output.value;
+
   try {
     const result = await jsonApi.validate(input.value);
     if (result.valid) {
       output.value = await jsonApi.minify(input.value);
       isValid.value = true;
       errorMessage.value = '';
+      isMinified.value = true;
     } else {
       isValid.value = false;
       errorMessage.value = result.error || 'JSON 格式无效';
@@ -97,6 +113,7 @@ const minifyJson = async () => {
 };
 
 const clearAll = () => {
+  isMinified.value = false;
   input.value = '';
   output.value = '';
   isValid.value = true;
@@ -245,12 +262,12 @@ const getMismatchStatus = (m: ColumnMismatch): string => {
       </div>
       <div class="button-group">
         <el-button
-          type="warning"
-          :icon="Minus"
+          :type="isMinified ? 'info' : 'warning'"
+          :icon="isMinified ? RefreshRight : Minus"
           class="minify-btn"
           @click="minifyJson"
         >
-          压缩
+          {{ isMinified ? '还原' : '压缩' }}
         </el-button>
         <el-button
           type="success"
@@ -579,14 +596,14 @@ const getMismatchStatus = (m: ColumnMismatch): string => {
 }
 
 .clear-btn {
-  background-color: #a0aec0 !important;
-  border-color: #a0aec0 !important;
+  background-color: #e6a23c !important;
+  border-color: #e6a23c !important;
   color: #fff !important;
 }
 
 .clear-btn:hover {
-  background-color: #909eb0 !important;
-  border-color: #909eb0 !important;
+  background-color: #cf9236 !important;
+  border-color: #cf9236 !important;
 }
 
 .minify-btn {
@@ -601,14 +618,14 @@ const getMismatchStatus = (m: ColumnMismatch): string => {
 }
 
 .copy-btn {
-  background-color: #10b981 !important;
-  border-color: #10b981 !important;
+  background-color: #f87171 !important;
+  border-color: #f87171 !important;
   color: #fff !important;
 }
 
 .copy-btn:hover {
-  background-color: #0da86e !important;
-  border-color: #0da86e !important;
+  background-color: #ef4444 !important;
+  border-color: #ef4444 !important;
 }
 
 /* 字段校验弹窗 - 暗黑主题 */

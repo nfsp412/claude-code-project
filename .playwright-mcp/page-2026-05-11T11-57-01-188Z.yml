@@ -1,0 +1,56 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - img [ref=e7]
+      - generic [ref=e9]:
+        - heading "JSON 格式化工具" [level=1] [ref=e10]
+        - paragraph [ref=e11]: 快速、美观、易用的 JSON 处理工具
+      - button "切换到亮色模式" [ref=e12] [cursor=pointer]:
+        - img [ref=e13]
+  - main [ref=e15]:
+    - generic [ref=e16]:
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - heading "输入" [level=3] [ref=e19]
+          - generic [ref=e20]:
+            - generic [ref=e22] [cursor=pointer]:
+              - generic:
+                - combobox [ref=e24]
+                - generic [ref=e25]: 加载样例
+              - img [ref=e28]
+            - generic [ref=e30]:
+              - generic [ref=e31]: 0 bytes
+              - generic [ref=e32]: 0 行
+        - textbox "在此粘贴或输入 JSON..." [ref=e34]
+        - generic [ref=e35]:
+          - generic [ref=e37] [cursor=pointer]:
+            - generic:
+              - combobox [ref=e39]
+              - generic [ref=e40]: 2 个空格
+            - img [ref=e43]
+          - generic [ref=e45]:
+            - button "格式化" [ref=e46] [cursor=pointer]:
+              - img [ref=e48]
+              - generic [ref=e50]: 格式化
+            - button "字段校验" [ref=e51] [cursor=pointer]:
+              - img [ref=e53]
+              - generic [ref=e55]: 字段校验
+            - button "清空" [ref=e56] [cursor=pointer]:
+              - img [ref=e58]
+              - generic [ref=e60]: 清空
+      - generic [ref=e61]:
+        - generic [ref=e62]:
+          - heading "输出" [level=3] [ref=e63]
+          - generic [ref=e64]:
+            - generic [ref=e65]: 0 bytes
+            - generic [ref=e66]: 0 行
+        - textbox "格式化后的 JSON 将显示在这里..." [ref=e68]
+        - generic [ref=e69]:
+          - button "压缩" [ref=e70] [cursor=pointer]:
+            - img [ref=e72]
+            - generic [ref=e74]: 压缩
+          - button "复制" [ref=e75] [cursor=pointer]:
+            - img [ref=e77]
+            - generic [ref=e79]: 复制
+  - contentinfo [ref=e80]:
+    - paragraph [ref=e82]: © 2026 JSON Formatter. All rights reserved.
