@@ -1,7 +1,8 @@
-你将会在这个代码库中实现一个新功能
+在这个代码库 @json-parser/frontend/ 中实现一个新功能
 
-$arguments
+$ARGUMENTS
 
-重要:只给前端代码增加新功能
-如果这些新功能开始构建了,确保将代码变更的内容写入一个叫做"frontend-change.md"的文件中
-不需要询问我去获取修改文件的授权,确保你可以一直获取到修改文件的权限
+important:
+只针对前端代码库进行新功能的实现, 前端代码库路径 @json-parser/frontend/
+新功能增加完成后, 将代码变更的内容信息,写入 @json-parser/frontend/frontend-change.md 文件中
+不需要询问我去获取 修改文件 的授权,确保你可以一直获取到 修改文件 的权限

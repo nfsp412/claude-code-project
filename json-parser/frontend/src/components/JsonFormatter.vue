@@ -5,10 +5,13 @@ import { DocumentCopy, DocumentDelete, MagicStick, Minus, RefreshRight, Select }
 import { ElMessage, ElSelect, ElOption } from 'element-plus';
 import { jsonSamples } from '../data/samples';
 import type { ContentValidateResult, ColumnMismatch } from '../types';
+import Fireworks from './Fireworks.vue';
 
 // 注入主题状态
 const isDark = inject('isDark', ref(true));
 const isDarkMode = computed(() => isDark.value);
+
+const fireworksRef = ref<InstanceType<typeof Fireworks> | null>(null);
 
 const input = ref('');
 const selectedSample = ref('');
@@ -239,6 +242,12 @@ const getMismatchStatus = (m: ColumnMismatch): string => {
           >
             清空
           </el-button>
+          <el-button
+            class="fireworks-btn"
+            @click="fireworksRef?.launchFireworks()"
+          >
+            放烟花
+          </el-button>
         </div>
       </div>
     </div>
@@ -329,6 +338,8 @@ const getMismatchStatus = (m: ColumnMismatch): string => {
         </el-table>
       </div>
     </el-dialog>
+
+    <Fireworks ref="fireworksRef" />
   </div>
 </template>
 
@@ -626,6 +637,23 @@ const getMismatchStatus = (m: ColumnMismatch): string => {
 .copy-btn:hover {
   background-color: #ef4444 !important;
   border-color: #ef4444 !important;
+}
+
+.fireworks-btn {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
+  border-color: #22c55e !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 15px rgba(34, 197, 94, 0.4);
+  transition: all 0.3s ease !important;
+}
+
+.fireworks-btn:hover {
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%) !important;
+  border-color: #16a34a !important;
+  box-shadow: 0 0 25px rgba(34, 197, 94, 0.6);
+  transform: translateY(-1px);
 }
 
 /* 字段校验弹窗 - 暗黑主题 */

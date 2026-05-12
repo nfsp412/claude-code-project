@@ -103,6 +103,13 @@ think a lot
 - 可以直接和git进行交互;无需再输入git命令
 - add and commit this changes
 
+##### 自定义命令
+
+- 目录: .claude/commands/xxx.md
+- 这个xxx就是可以通过斜杠调用的命令
+- 通过 $ARGUMENTS 可以接收传参
+- 这个文件不会像是claude.md文件一样添加到上下文中,所以如果有些要求是只需要在特定的某些会话中触发,使用这种方式就比较合适了
+
 ##### 其他tips
 
 - shift + 1 进入 bash mode
@@ -128,9 +135,12 @@ view the '清空' button
 i want change this button's color to yellow
 ```
 
-### 多agent
+### 多会话并行开发
 
-TODO
+##### 演示如何进行多会话并行开发
+
+- 自定义一个命令,例如 [text](.claude/commands/implements-features.md) 该命令用来方便的进行功能新增
+- 
 
 ### 新增功能
 
