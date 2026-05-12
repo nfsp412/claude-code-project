@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>任务构建 — DataX 监控调度平台</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  darkMode: 'class',
+  theme: { extend: { colors: {
+    'dx-page':'#0A0E1A','dx-navbar':'#111827','dx-sidebar':'#0C1222',
+    'dx-card':'#1A2236','dx-card-hover':'#1E293B','dx-input':'#131B2B',
+    'dx-accent':'#06B6D4','dx-accent-secondary':'#3B82F6',
+    'dx-text-primary':'#E2E8F0','dx-text-secondary':'#94A3B8','dx-text-muted':'#64748B',
+    'dx-border':'#1E293B','dx-border-active':'#06B6D4',
+    'dx-success':'#10B981','dx-warning':'#F59E0B','dx-danger':'#EF4444',
+  }}}
+}
+</script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #0A0E1A; color: #E2E8F0; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #1E293B; border-radius: 3px; }
+
+/* Step progress bar */
+.step-progress { display: flex; align-items: center; padding: 8px 20px; }
+.step-item { display: flex; flex-direction: column; align-items: center; gap: 8px; flex-shrink: 0; position: relative; z-index: 1; }
+.step-circle { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; border: 2px solid #1E293B; background: #1A2236; color: #64748B; transition: all 0.3s; }
+.step-circle.active { border-color: #06B6D4; background: #06B6D4; color: #fff; }
+.step-circle.done { border-color: #10B981; background: #10B981; color: #fff; }
+.step-label { font-size: 11px; font-weight: 500; color: #64748B; white-space: nowrap; text-align: center; line-height: 1.2; }
+.step-label.active { color: #06B6D4; font-weight: 600; }
+.step-label.done { color: #10B981; }
+.step-connector { flex: 1; height: 2px; min-width: 20px; background: #1E293B; margin: 0 8px; margin-bottom: 24px; transition: background 0.3s; }
+.step-connector.done { background: #06B6D4; }
+
+.checkbox-custom { appearance: none; width: 16px; height: 16px; border: 1.5px solid #64748B; border-radius: 3px; background: transparent; cursor: pointer; transition: 0.15s; position: relative; flex-shrink: 0; }
+.checkbox-custom:checked { background: #06B6D4; border-color: #06B6D4; }
+.checkbox-custom:checked::after { content: ''; position: absolute; left: 4px; top: 1px; width: 5px; height: 9px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+
+.radio-custom { appearance: none; width: 16px; height: 16px; border: 1.5px solid #64748B; border-radius: 50%; background: transparent; cursor: pointer; transition: 0.15s; flex-shrink: 0; }
+.radio-custom:checked { border-color: #06B6D4; border-width: 5px; }
+
+.step-content { display: none; }
+.step-content.active { display: block; }
+
+.json-display { background: #0c1222; border: 1px solid #1E293B; border-radius: 8px; padding: 16px; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 12px; color: #94A3B8; line-height: 1.7; overflow-x: auto; white-space: pre; max-height: 360px; overflow-y: auto; }
+.json-key { color: #67e8f9; }
+.json-string { color: #a5d6a7; }
+.json-number { color: #f59e0b; }
+.json-bool { color: #ef4444; }
+
+select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%2364748B' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 32px; }
+</style>
+</head>
+<body class="min-h-screen bg-dx-page p-6">
+
+<!-- ====== Breadcrumb + Title ====== -->
+<div class="flex flex-col gap-1 mb-5">
+  <div class="flex items-center gap-2 text-xs text-dx-text-muted">
+    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+    <span>/</span><span class="text-dx-text-muted">任务管理</span><span>/</span><span class="text-dx-accent">任务构建</span>
+  </div>
+  <h1 class="text-xl font-bold text-dx-text-primary">任务构建</h1>
+</div>
+
+<!-- ====== Step Progress Bar ====== -->
+<div class="bg-dx-card border border-dx-border rounded-lg p-6 mb-4">
+  <div class="step-progress">
+    <div class="step-item">
+      <div class="step-circle done" id="circle1">✓</div>
+      <span class="step-label done" id="label1">构建 Reader</span>
+    </div>
+    <div class="step-connector done" id="line1"></div>
+    <div class="step-item">
+      <div class="step-circle active" id="circle2">2</div>
+      <span class="step-label active" id="label2">构建 Writer</span>
+    </div>
+    <div class="step-connector" id="line2"></div>
+    <div class="step-item">
+      <div class="step-circle" id="circle3">3</div>
+      <span class="step-label" id="label3">字段顺序映射</span>
+    </div>
+    <div class="step-connector" id="line3"></div>
+    <div class="step-item">
+      <div class="step-circle" id="circle4">4</div>
+      <span class="step-label" id="label4">构建完成</span>
+    </div>
+  </div>
+</div>
+
+<!-- ====== Step Content Area ====== -->
+<div class="bg-dx-card border border-dx-border rounded-lg p-6">
+
+  <!-- =========== STEP 1: Reader =========== -->
+  <div class="step-content active" id="step1">
+    <div class="flex items-center gap-3 mb-6">
+      <div class="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center">
+        <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 2 1 3 3 3h10c2 0 3-1 3-3V7M4 7c0-2 1-3 3-3h10c2 0 3 1 3 3M4 7h16M9 21v-6H6m12 0h-3v6"/></svg>
+      </div>
+      <div>
+        <h2 class="text-base font-semibold text-dx-text-primary">步骤 1: 构建 Reader</h2>
+        <p class="text-xs text-dx-text-muted">配置数据读取源 — 从源数据库读取数据</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-x-6 gap-y-4">
+      <!-- 数据库源 -->
+      <div class="flex flex-col gap-1.5">
+        <label class="text-xs font-medium text-dx-text-secondary">数据库源 <span class="text-red-400">*</span></label>
+        <select class="h-9 px-3 rounded-md bg-dx-input border border-dx-border text-sm text-dx-text-primary focus:outline-none focus:border-dx-accent transition-colors">
+          <option value="" disabled selected>请选择数据库源</option>
+          <option>mysql_analytics (MySQL 8.0)</option>
+          <option>pg_orders (PostgreSQL 15)</option>
+          <option>mongo_products (MongoDB 7.0)</option>
+          <option>hive_user_profile (Hive 3.1)</option>
+        </select>
+      </div>
+      <!-- 数据库表名 -->
+      <div class="flex flex-col gap-1.5">
+        <label class="text-xs font-medium text-dx-text-secondary">数据库表名 <span class="text-red-400">*</span></label>
+        <select class="h-9 px-3 rounded-md bg-dx-input border border-dx-border text-sm text-dx-text-primary focus:outline-none focus:border-dx-accent transition-colors">
+          <option value="" disabled selected>请选择数据库表</option>
+          <option>user_behavior_log</option>
+          <option>order_detail</option>
+          <option>product_info</option>
+        </select>
+      </div>
+      <!-- SQL语句 -->
+      <div class="col-span-2 flex flex-col gap-1.5">
+        <label class="text-xs font-medium text-dx-text-secondary">SQL 语句 <span class="text-dx-text-muted">(选填)</span></label>
+        <textarea rows="3" placeholder="请输入自定义查询 SQL, 例如: SELECT * FROM user_behavior_log WHERE dt = '${dt}'" class="w-full px-3 py-2 rounded-md bg-dx-input border border-dx-border text-sm text-dx-text-primary font-mono placeholder:text-dx-text-muted/50 focus:outline-none focus:border-dx-accent transition-colors resize-none"></textarea>
+        <span class="text-2xs text-dx-text-muted">支持 ${变量名} 格式的变量替换</span>
+      </div>
+      <!-- 切分字段 -->
+      <div class="flex flex-col gap-1.5">
+        <label class="text-xs font-medium text-dx-text-secondary">切分字段 <span class="text-dx-text-muted">(选填)</span></label>
+        <input type="text" placeholder="例如: id" class="h-9 px-3 rounded-md bg-dx-input border border-dx-border text-sm text-dx-text-primary placeholder:text-dx-text-muted/50 focus:outline-none focus:border-dx-accent transition-colors">
+        <span class="text-2xs text-dx-text-muted">用于并行读取的切分键, 建议选择主键或索引字段</span>
+      </div>
+      <!-- WHERE条件 -->
+      <div class="flex flex-col gap-1.5">
+        <label class="text-xs font-medium text-dx-text-secondary">WHERE 条件 <span class="text-dx-text-muted">(选填)</span></label>
+        <input type="text" placeholder="例如: status = 1 AND is_deleted = 0" class="h-9 px-3 rounded-md bg-dx-input border border-dx-border text-sm text-dx-text-primary placeholder:text-dx-text-muted/50 focus:outline-none focus:border-dx-accent transition-colors">
+      </div>
+    </div>
+
+    <!-- 表字段信息 -->
+    <div class="mt-5 flex flex-col gap-2">
+      <div class="flex items-center justify-between">
+        <label class="text-xs font-medium text-dx-text-secondary">表字段信息 <span class="text-dx-text-muted">(选填 — 选择需要同步的字段)</span></label>
+        <label class="flex items-center gap-2 text-xs text-dx-text-muted cursor-pointer select-none">
+          <input type="checkbox" class="checkbox-custom" checked onchange="document.querySelectorAll('#reader-fields input[type=checkbox]').forEach(cb=>cb.checked=this.checked)">
+          全选
+        </label>
+      </div>
+      <div id="reader-fields" class="bg-dx-input border border-dx-border rounded-md p-3 grid grid-cols-4 gap-x-4 gap-y-2">
+        <label class="flex items-center gap-2 text-xs text-dx-text-secondary cursor-pointer hover:text-dx-text-primary transition-colors"><input type="checkbox" class="checkbox-custom" checked> id <span class="text-dx-text-muted ml-auto">BIGINT</span></label>
+        <label class="flex items-center gap-2 text-xs text-dx-text-secondary cursor-pointer hover:text-dx-text-primary transition-colors"><input type="checkbox" class="checkbox-custom" checked> user_id <span class="text-dx-text-muted ml-auto">BIGINT</span></label>
+        <label class="flex items-center gap-2 text-xs text-dx-text-secondary cursor-pointer hover:text-dx-text-primary transition-colors"><input type="checkbox" class="checkbox-custom" checked> event_type <span class="text-dx-text-muted ml-auto">VARCHAR</span></label>
+        <label class="flex items-center gap-2 text-xs text-dx-text-secondary cursor-pointer hover:text-dx-text-primary transition-colors"><input type="checkbox" class="checkbox-custom" checked> page_url <span class="text-dx-text-muted ml-auto">VARCHAR</span></label>
+        <label class="flex items-center gap-2 text-xs text-dx-text-secondary cursor-pointer hover:text-dx-text-primary transition-colors"><input type="checkbox" class="checkbox-custom" checked> event_time <span class="text-dx-text-muted ml-auto">DATETIME</span></label>
+        <label class="flex items-center gap-2 text-xs text-dx-text-secondary cursor-pointer hover:text-dx-text-primary transition-colors"><input type="checkbox" class="checkbox-custom" checked> duration_ms <span class="text-dx-text-muted ml-auto">INT</span></label>
+        <label class="flex items-center gap-2 text-xs text-dx-text-secondary cursor-pointer hover:text-dx-text-primary transition-colors"><input type="checkbox" class="checkbox-custom" checked> device_type <span class="text-dx-text-muted ml-auto">VARCHAR</span></label>
+        <label class="flex items-center gap-2 text-xs text-dx-text-secondary cursor-pointer hover:text-dx-text-primary transition-colors"><input type="checkbox" class="checkbox-custom" checked> ip_address <span class="text-dx-text-muted ml-auto">VARCHAR</span></label>
+        <label class="flex items-center gap-2 text-xs text-dx-text-secondary cursor-pointer hover:text-dx-text-primary transition-colors"><input type="checkbox" class="checkbox-custom"> extra_data <span class="text-dx-text-muted ml-auto">JSON</span></label>
+        <label class="flex items-center gap-2 text-xs text-dx-text-secondary cursor-pointer hover:text-dx-text-primary transition-colors"><input type="checkbox" class="checkbox-custom"> raw_log <span class="text-dx-text-muted ml-auto">TEXT</span></label>
+        <label class="flex items-center gap-2 text-xs text-dx-text-secondary cursor-pointer hover:text-dx-text-primary transition-colors"><input type="checkbox" class="checkbox-custom" checked> created_at <span class="text-dx-text-muted ml-auto">DATETIME</span></label>
+        <label class="flex items-center gap-2 text-xs text-dx-text-secondary cursor-pointer hover:text-dx-text-primary transition-colors"><input type="checkbox" class="checkbox-custom" checked> updated_at <span class="text-dx-text-muted ml-auto">DATETIME</span></label>
+      </div>
+    </div>
+
+    <!-- Nav buttons -->
+    <div class="flex justify-end gap-3 mt-6 pt-5 border-t border-dx-border">
+      <button class="h-9 px-5 rounded-md border border-dx-border text-sm text-dx-text-muted cursor-not-allowed opacity-50" disabled>上一步</button>
+      <button class="h-9 px-5 rounded-md bg-dx-accent hover:bg-cyan-500 text-white text-sm font-medium transition-colors flex items-center gap-1.5" onclick="goToStep(2)">下一步 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></button>
+    </div>
+  </div>
+
+  <!-- =========== STEP 2: Writer =========== -->
+  <div class="step-content" id="step2">
+    <div class="flex items-center gap-3 mb-6">
+      <div class="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
+        <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 2 1 3 3 3h10c2 0 3-1 3-3V7M4 7c0-2 1-3 3-3h10c2 0 3 1 3 3M4 7h16"/></svg>
+      </div>
+      <div>
+        <h2 class="text-base font-semibold text-dx-text-primary">步骤 2: 构建 Writer</h2>
+        <p class="text-xs text-dx-text-muted">配置数据写入目标 — 将数据写入目标数据库</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-x-6 gap-y-4">
+      <!-- 数据库源 -->
+      <div class="flex flex-col gap-1.5">
+        <label class="text-xs font-medium text-dx-text-secondary">数据库源 <span class="text-red-400">*</span></label>
+        <select class="h-9 px-3 rounded-md bg-dx-input border border-dx-border text-sm text-dx-text-primary focus:outline-none focus:border-dx-accent transition-colors">
+          <option value="" disabled selected>请选择数据库源</option>
+          <option>clickhouse_ads (ClickHouse 24)</option>
+          <option>pg_datawarehouse (PostgreSQL 15)</option>
+          <option>hive_user_profile (Hive 3.1)</option>
+          <option>hdfs_datalake (HDFS 3.3)</option>
+        </select>
+      </div>
+      <!-- 数据库表名 -->
+      <div class="flex flex-col gap-1.5">
+        <label class="text-xs font-medium text-dx-text-secondary">数据库表名 <span class="text-red-400">*</span></label>
+        <select class="h-9 px-3 rounded-md bg-dx-input border border-dx-border text-sm text-dx-text-primary focus:outline-none focus:border-dx-accent transition-colors">
+          <option value="" disabled selected>请选择数据库表</option>
+          <option>dw_user_behavior_agg</option>
+          <option>dw_order_metrics</option>
+        </select>
+      </div>
+      <!-- 前置SQL -->
+      <div class="col-span-2 flex flex-col gap-1.5">
+        <label class="text-xs font-medium text-dx-text-secondary">前置 SQL <span class="text-dx-text-muted">(选填)</span></label>
+        <textarea rows="2" placeholder="例如: TRUNCATE TABLE dw_user_behavior_agg" class="w-full px-3 py-2 rounded-md bg-dx-input border border-dx-border text-sm text-dx-text-primary font-mono placeholder:text-dx-text-muted/50 focus:outline-none focus:border-dx-accent transition-colors resize-none"></textarea>
+        <span class="text-2xs text-dx-text-muted">数据写入前执行的 SQL 语句</span>
+      </div>
+    </div>
+
+    <!-- 表字段信息 -->
+    <div class="mt-5 flex flex-col gap-2">
+      <div class="flex items-center justify-between">
+        <label class="text-xs font-medium text-dx-text-secondary">表字段信息 <span class="text-dx-text-muted">(选填 — 选择需要写入的字段)</span></label>
+        <label class="flex items-center gap-2 text-xs text-dx-text-muted cursor-pointer select-none">
+          <input type="checkbox" class="checkbox-custom" checked onchange="document.querySelectorAll('#writer-fields input[type=checkbox]').forEach(cb=>cb.checked=this.checked)">
+          全选
+        </label>
+      </div>
+      <div id="writer-fields" class="bg-dx-input border border-dx-border rounded-md p-3 grid grid-cols-4 gap-x-4 gap-y-2">
+        <label class="flex items-center gap-2 text-xs text-dx-text-secondary cursor-pointer hover:text-dx-text-primary transition-colors"><input type="checkbox" class="checkbox-custom" checked> id <span class="text-dx-text-muted ml-auto">BIGINT</span></label>
+        <label class="flex items-center gap-2 text-xs text-dx-text-secondary cursor-pointer hover:text-dx-text-primary transition-colors"><input type="checkbox" class="checkbox-custom" checked> user_id <span class="text-dx-text-muted ml-auto">BIGINT</span></label>
+        <label class="flex items-center gap-2 text-xs text-dx-text-secondary cursor-pointer hover:text-dx-text-primary transition-colors"><input type="checkbox" class="checkbox-custom" checked> event_type <span class="text-dx-text-muted ml-auto">VARCHAR</span></label>
+        <label class="flex items-center gap-2 text-xs text-dx-text-secondary cursor-pointer hover:text-dx-text-primary transition-colors"><input type="checkbox" class="checkbox-custom" checked> page_url <span class="text-dx-text-muted ml-auto">VARCHAR</span></label>
+        <label class="flex items-center gap-2 text-xs text-dx-text-secondary cursor-pointer hover:text-dx-text-primary transition-colors"><input type="checkbox" class="checkbox-custom" checked> event_time <span class="text-dx-text-muted ml-auto">DATETIME</span></label>
+        <label class="flex items-center gap-2 text-xs text-dx-text-secondary cursor-pointer hover:text-dx-text-primary transition-colors"><input type="checkbox" class="checkbox-custom" checked> duration_ms <span class="text-dx-text-muted ml-auto">INT</span></label>
+        <label class="flex items-center gap-2 text-xs text-dx-text-secondary cursor-pointer hover:text-dx-text-primary transition-colors"><input type="checkbox" class="checkbox-custom" checked> device_type <span class="text-dx-text-muted ml-auto">VARCHAR</span></label>
+        <label class="flex items-center gap-2 text-xs text-dx-text-secondary cursor-pointer hover:text-dx-text-primary transition-colors"><input type="checkbox" class="checkbox-custom" checked> ip_address <span class="text-dx-text-muted ml-auto">VARCHAR</span></label>
+        <label class="flex items-center gap-2 text-xs text-dx-text-secondary cursor-pointer hover:text-dx-text-primary transition-colors"><input type="checkbox" class="checkbox-custom"> extra_data <span class="text-dx-text-muted ml-auto">JSON</span></label>
+        <label class="flex items-center gap-2 text-xs text-dx-text-secondary cursor-pointer hover:text-dx-text-primary transition-colors"><input type="checkbox" class="checkbox-custom"> raw_log <span class="text-dx-text-muted ml-auto">TEXT</span></label>
+        <label class="flex items-center gap-2 text-xs text-dx-text-secondary cursor-pointer hover:text-dx-text-primary transition-colors"><input type="checkbox" class="checkbox-custom" checked> created_at <span class="text-dx-text-muted ml-auto">DATETIME</span></label>
+        <label class="flex items-center gap-2 text-xs text-dx-text-secondary cursor-pointer hover:text-dx-text-primary transition-colors"><input type="checkbox" class="checkbox-custom" checked> updated_at <span class="text-dx-text-muted ml-auto">DATETIME</span></label>
+      </div>
+    </div>
+
+    <!-- Nav buttons -->
+    <div class="flex justify-end gap-3 mt-6 pt-5 border-t border-dx-border">
+      <button class="h-9 px-5 rounded-md border border-dx-border text-sm text-dx-text-secondary hover:bg-dx-card-hover hover:text-dx-text-primary transition-colors" onclick="goToStep(1)">上一步</button>
+      <button class="h-9 px-5 rounded-md bg-dx-accent hover:bg-cyan-500 text-white text-sm font-medium transition-colors flex items-center gap-1.5" onclick="goToStep(3)">下一步 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></button>
+    </div>
+  </div>
+
+  <!-- =========== STEP 3: 字段映射 =========== -->
+  <div class="step-content" id="step3">
+    <div class="flex items-center gap-3 mb-6">
+      <div class="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
+        <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+      </div>
+      <div>
+        <h2 class="text-base font-semibold text-dx-text-primary">步骤 3: 字段顺序映射</h2>
+        <p class="text-xs text-dx-text-muted">映射 Reader 和 Writer 之间的字段对应关系</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-6">
+      <!-- Reader 字段 -->
+      <div class="bg-dx-input border border-dx-border rounded-lg p-4">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded bg-cyan-500/10 flex items-center justify-center">
+              <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 2 1 3 3 3h10c2 0 3-1 3-3V7M4 7c0-2 1-3 3-3h10c2 0 3 1 3 3"/></svg>
+            </div>
+            <h3 class="text-sm font-semibold text-dx-text-primary">Reader 字段</h3>
+            <span class="text-2xs text-dx-text-muted">(user_behavior_log)</span>
+          </div>
+          <label class="flex items-center gap-2 text-xs text-dx-text-muted cursor-pointer select-none">
+            <input type="checkbox" class="checkbox-custom" checked onchange="document.querySelectorAll('#reader-mapping input[type=checkbox]').forEach(cb=>cb.checked=this.checked)">
+            全选
+          </label>
+        </div>
+        <div id="reader-mapping" class="flex flex-col gap-1">
+          <div class="flex items-center gap-2 px-3 py-2 rounded hover:bg-dx-card-hover transition-colors"><span class="text-2xs text-dx-text-muted w-5">1</span><input type="checkbox" class="checkbox-custom" checked><span class="text-xs text-dx-text-primary">id</span><span class="text-2xs text-dx-text-muted ml-auto">BIGINT</span></div>
+          <div class="flex items-center gap-2 px-3 py-2 rounded hover:bg-dx-card-hover transition-colors"><span class="text-2xs text-dx-text-muted w-5">2</span><input type="checkbox" class="checkbox-custom" checked><span class="text-xs text-dx-text-primary">user_id</span><span class="text-2xs text-dx-text-muted ml-auto">BIGINT</span></div>
+          <div class="flex items-center gap-2 px-3 py-2 rounded hover:bg-dx-card-hover transition-colors"><span class="text-2xs text-dx-text-muted w-5">3</span><input type="checkbox" class="checkbox-custom" checked><span class="text-xs text-dx-text-primary">event_type</span><span class="text-2xs text-dx-text-muted ml-auto">VARCHAR</span></div>
+          <div class="flex items-center gap-2 px-3 py-2 rounded hover:bg-dx-card-hover transition-colors"><span class="text-2xs text-dx-text-muted w-5">4</span><input type="checkbox" class="checkbox-custom" checked><span class="text-xs text-dx-text-primary">page_url</span><span class="text-2xs text-dx-text-muted ml-auto">VARCHAR</span></div>
+          <div class="flex items-center gap-2 px-3 py-2 rounded hover:bg-dx-card-hover transition-colors"><span class="text-2xs text-dx-text-muted w-5">5</span><input type="checkbox" class="checkbox-custom" checked><span class="text-xs text-dx-text-primary">event_time</span><span class="text-2xs text-dx-text-muted ml-auto">DATETIME</span></div>
+          <div class="flex items-center gap-2 px-3 py-2 rounded hover:bg-dx-card-hover transition-colors"><span class="text-2xs text-dx-text-muted w-5">6</span><input type="checkbox" class="checkbox-custom" checked><span class="text-xs text-dx-text-primary">duration_ms</span><span class="text-2xs text-dx-text-muted ml-auto">INT</span></div>
+          <div class="flex items-center gap-2 px-3 py-2 rounded hover:bg-dx-card-hover transition-colors"><span class="text-2xs text-dx-text-muted w-5">7</span><input type="checkbox" class="checkbox-custom" checked><span class="text-xs text-dx-text-primary">device_type</span><span class="text-2xs text-dx-text-muted ml-auto">VARCHAR</span></div>
+          <div class="flex items-center gap-2 px-3 py-2 rounded hover:bg-dx-card-hover transition-colors"><span class="text-2xs text-dx-text-muted w-5">8</span><input type="checkbox" class="checkbox-custom" checked><span class="text-xs text-dx-text-primary">ip_address</span><span class="text-2xs text-dx-text-muted ml-auto">VARCHAR</span></div>
+          <div class="flex items-center gap-2 px-3 py-2 rounded hover:bg-dx-card-hover transition-colors"><span class="text-2xs text-dx-text-muted w-5">9</span><input type="checkbox" class="checkbox-custom" checked><span class="text-xs text-dx-text-primary">created_at</span><span class="text-2xs text-dx-text-muted ml-auto">DATETIME</span></div>
+          <div class="flex items-center gap-2 px-3 py-2 rounded hover:bg-dx-card-hover transition-colors"><span class="text-2xs text-dx-text-muted w-5">10</span><input type="checkbox" class="checkbox-custom" checked><span class="text-xs text-dx-text-primary">updated_at</span><span class="text-2xs text-dx-text-muted ml-auto">DATETIME</span></div>
+        </div>
+      </div>
+
+      <!-- Writer 字段 -->
+      <div class="bg-dx-input border border-dx-border rounded-lg p-4">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded bg-purple-500/10 flex items-center justify-center">
+              <svg class="w-3.5 h-3.5 text-purple-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 2 1 3 3 3h10c2 0 3-1 3-3V7"/></svg>
+            </div>
+            <h3 class="text-sm font-semibold text-dx-text-primary">Writer 字段</h3>
+            <span class="text-2xs text-dx-text-muted">(dw_user_behavior_agg)</span>
+          </div>
+          <label class="flex items-center gap-2 text-xs text-dx-text-muted cursor-pointer select-none">
+            <input type="checkbox" class="checkbox-custom" checked onchange="document.querySelectorAll('#writer-mapping input[type=checkbox]').forEach(cb=>cb.checked=this.checked)">
+            全选
+          </label>
+        </div>
+        <div id="writer-mapping" class="flex flex-col gap-1">
+          <div class="flex items-center gap-2 px-3 py-2 rounded hover:bg-dx-card-hover transition-colors"><span class="text-2xs text-dx-text-muted w-5">1</span><input type="checkbox" class="checkbox-custom" checked><span class="text-xs text-dx-text-primary">id</span><span class="text-2xs text-dx-text-muted ml-auto">BIGINT</span></div>
+          <div class="flex items-center gap-2 px-3 py-2 rounded hover:bg-dx-card-hover transition-colors"><span class="text-2xs text-dx-text-muted w-5">2</span><input type="checkbox" class="checkbox-custom" checked><span class="text-xs text-dx-text-primary">user_id</span><span class="text-2xs text-dx-text-muted ml-auto">BIGINT</span></div>
+          <div class="flex items-center gap-2 px-3 py-2 rounded hover:bg-dx-card-hover transition-colors"><span class="text-2xs text-dx-text-muted w-5">3</span><input type="checkbox" class="checkbox-custom" checked><span class="text-xs text-dx-text-primary">event_type</span><span class="text-2xs text-dx-text-muted ml-auto">VARCHAR</span></div>
+          <div class="flex items-center gap-2 px-3 py-2 rounded hover:bg-dx-card-hover transition-colors"><span class="text-2xs text-dx-text-muted w-5">4</span><input type="checkbox" class="checkbox-custom" checked><span class="text-xs text-dx-text-primary">page_url</span><span class="text-2xs text-dx-text-muted ml-auto">VARCHAR</span></div>
+          <div class="flex items-center gap-2 px-3 py-2 rounded hover:bg-dx-card-hover transition-colors"><span class="text-2xs text-dx-text-muted w-5">5</span><input type="checkbox" class="checkbox-custom" checked><span class="text-xs text-dx-text-primary">event_time</span><span class="text-2xs text-dx-text-muted ml-auto">DATETIME</span></div>
+          <div class="flex items-center gap-2 px-3 py-2 rounded hover:bg-dx-card-hover transition-colors"><span class="text-2xs text-dx-text-muted w-5">6</span><input type="checkbox" class="checkbox-custom" checked><span class="text-xs text-dx-text-primary">duration_ms</span><span class="text-2xs text-dx-text-muted ml-auto">INT</span></div>
+          <div class="flex items-center gap-2 px-3 py-2 rounded hover:bg-dx-card-hover transition-colors"><span class="text-2xs text-dx-text-muted w-5">7</span><input type="checkbox" class="checkbox-custom" checked><span class="text-xs text-dx-text-primary">device_type</span><span class="text-2xs text-dx-text-muted ml-auto">VARCHAR</span></div>
+          <div class="flex items-center gap-2 px-3 py-2 rounded hover:bg-dx-card-hover transition-colors"><span class="text-2xs text-dx-text-muted w-5">8</span><input type="checkbox" class="checkbox-custom" checked><span class="text-xs text-dx-text-primary">ip_address</span><span class="text-2xs text-dx-text-muted ml-auto">VARCHAR</span></div>
+          <div class="flex items-center gap-2 px-3 py-2 rounded hover:bg-dx-card-hover transition-colors"><span class="text-2xs text-dx-text-muted w-5">9</span><input type="checkbox" class="checkbox-custom" checked><span class="text-xs text-dx-text-primary">created_at</span><span class="text-2xs text-dx-text-muted ml-auto">DATETIME</span></div>
+          <div class="flex items-center gap-2 px-3 py-2 rounded hover:bg-dx-card-hover transition-colors"><span class="text-2xs text-dx-text-muted w-5">10</span><input type="checkbox" class="checkbox-custom" checked><span class="text-xs text-dx-text-primary">updated_at</span><span class="text-2xs text-dx-text-muted ml-auto">DATETIME</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nav buttons -->
+    <div class="flex justify-end gap-3 mt-6 pt-5 border-t border-dx-border">
+      <button class="h-9 px-5 rounded-md border border-dx-border text-sm text-dx-text-secondary hover:bg-dx-card-hover hover:text-dx-text-primary transition-colors" onclick="goToStep(2)">上一步</button>
+      <button class="h-9 px-5 rounded-md bg-dx-accent hover:bg-cyan-500 text-white text-sm font-medium transition-colors flex items-center gap-1.5" onclick="goToStep(4)">下一步 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></button>
+    </div>
+  </div>
+
+  <!-- =========== STEP 4: 构建完成 =========== -->
+  <div class="step-content" id="step4">
+    <div class="flex items-center gap-3 mb-6">
+      <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+      <div>
+        <h2 class="text-base font-semibold text-dx-text-primary">步骤 4: 构建完成</h2>
+        <p class="text-xs text-dx-text-muted">设置任务名称并生成 DataX 配置 JSON</p>
+      </div>
+    </div>
+
+    <!-- 任务名称 -->
+    <div class="flex flex-col gap-1.5 mb-4">
+      <label class="text-xs font-medium text-dx-text-secondary">任务名称 <span class="text-red-400">*</span></label>
+      <input type="text" placeholder="请输入任务名称" class="w-80 h-9 px-3 rounded-md bg-dx-input border border-dx-border text-sm text-dx-text-primary placeholder:text-dx-text-muted/50 focus:outline-none focus:border-dx-accent transition-colors">
+    </div>
+
+    <!-- 构建JSON按钮 -->
+    <button class="h-9 px-5 rounded-md bg-dx-accent hover:bg-cyan-500 text-white text-sm font-medium transition-colors flex items-center gap-1.5 mb-4">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 3H7a2 2 0 00-2 2v2.5c0 1.5-1 2-1 2s1 .5 1 2V14a2 2 0 002 2h1"/><path d="M16 3h1a2 2 0 012 2v2.5c0 1.5 1 2 1 2s-1 .5-1 2V14a2 2 0 01-2 2h-1"/></svg>
+      构建 JSON
+    </button>
+
+    <!-- JSON展示区 -->
+    <div class="json-display" id="jsonOutput" style="display:none;">
+<span class="json-key">"job"</span>: {
+  <span class="json-key">"setting"</span>: {
+    <span class="json-key">"speed"</span>: {
+      <span class="json-key">"channel"</span>: <span class="json-number">3</span>
+    }
+  },
+  <span class="json-key">"content"</span>: [
+    {
+      <span class="json-key">"reader"</span>: {
+        <span class="json-key">"name"</span>: <span class="json-string">"mysqlreader"</span>,
+        <span class="json-key">"parameter"</span>: {
+          <span class="json-key">"username"</span>: <span class="json-string">"root"</span>,
+          <span class="json-key">"password"</span>: <span class="json-string">"***"</span>,
+          <span class="json-key">"column"</span>: [
+            <span class="json-string">"id"</span>,
+            <span class="json-string">"user_id"</span>,
+            <span class="json-string">"event_type"</span>,
+            <span class="json-string">"event_time"</span>
+          ],
+          <span class="json-key">"connection"</span>: [
+            {
+              <span class="json-key">"table"</span>: [<span class="json-string">"user_behavior_log"</span>],
+              <span class="json-key">"jdbcUrl"</span>: [<span class="json-string">"jdbc:mysql://10.23.45.101:3306/analytics"</span>]
+            }
+          ]
+        }
+      },
+      <span class="json-key">"writer"</span>: {
+        <span class="json-key">"name"</span>: <span class="json-string">"clickhousewriter"</span>,
+        <span class="json-key">"parameter"</span>: {
+          <span class="json-key">"username"</span>: <span class="json-string">"default"</span>,
+          <span class="json-key">"password"</span>: <span class="json-string">"***"</span>,
+          <span class="json-key">"column"</span>: [
+            <span class="json-string">"id"</span>,
+            <span class="json-string">"user_id"</span>,
+            <span class="json-string">"event_type"</span>,
+            <span class="json-string">"event_time"</span>
+          ],
+          <span class="json-key">"connection"</span>: [
+            {
+              <span class="json-key">"table"</span>: [<span class="json-string">"dw_user_behavior_agg"</span>],
+              <span class="json-key">"jdbcUrl"</span>: [<span class="json-string">"jdbc:clickhouse://10.23.45.201:8123/ads"</span>]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}</div>
+
+    <!-- Placeholder when no JSON built -->
+    <div id="jsonPlaceholder" class="bg-dx-input border border-dx-border border-dashed rounded-lg p-10 flex flex-col items-center justify-center text-center">
+      <svg class="w-10 h-10 text-dx-text-muted mb-3" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 3H7a2 2 0 00-2 2v2.5c0 1.5-1 2-1 2s1 .5 1 2V14a2 2 0 002 2h1m8-14h1a2 2 0 012 2v2.5c0 1.5 1 2 1 2s-1 .5-1 2V14a2 2 0 01-2 2h-1"/></svg>
+      <p class="text-sm text-dx-text-muted">输入任务名称后, 点击 "构建 JSON" 按钮</p>
+      <p class="text-xs text-dx-text-muted mt-1">将自动生成 DataX 任务配置 JSON</p>
+    </div>
+
+    <!-- Nav buttons -->
+    <div class="flex justify-end gap-3 mt-6 pt-5 border-t border-dx-border">
+      <button class="h-9 px-5 rounded-md border border-dx-border text-sm text-dx-text-secondary hover:bg-dx-card-hover hover:text-dx-text-primary transition-colors" onclick="goToStep(3)">上一步</button>
+      <button class="h-9 px-5 rounded-md bg-dx-success hover:bg-emerald-600 text-white text-sm font-medium transition-colors flex items-center gap-1.5">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+        完成
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentStep = 1;
+window.goToStep = function(step) {
+  // Update step indicators
+  for (let i = 1; i <= 4; i++) {
+    const circle = document.getElementById('circle'+i);
+    const label = document.getElementById('label'+i);
+    const line = i < 4 ? document.getElementById('line'+i) : null;
+    circle.className = 'step-circle'; label.className = 'step-label';
+    if (line) line.className = 'step-connector';
+    if (i < step) { circle.classList.add('done'); label.classList.add('done'); circle.textContent = '✓'; if (line) line.classList.add('done'); }
+    else if (i === step) { circle.classList.add('active'); label.classList.add('active'); circle.textContent = i; }
+    else { circle.textContent = i; }
+  }
+
+  // Switch content panels
+  document.querySelectorAll('.step-content').forEach(el => el.classList.remove('active'));
+  document.getElementById('step'+step).classList.add('active');
+  currentStep = step;
+};
+
+// Wire up the "构建 JSON" button in step 4
+document.querySelector('#step4 button').addEventListener('click', function() {
+  document.getElementById('jsonPlaceholder').style.display = 'none';
+  document.getElementById('jsonOutput').style.display = 'block';
+});
+</script>
+</body>
+</html>

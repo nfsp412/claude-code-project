@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html, body, #app {
+    height: 100%;
+    background-color: #0A0E1A;
+    color: #E2E8F0;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1E293B;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #334155;
+  }
+}
+
+@layer components {
+  .sidebar-item {
+    @apply flex items-center gap-3 px-4 py-3 mx-2 rounded-lg text-sm font-medium
+           text-dx-text-secondary hover:bg-dx-card-hover hover:text-dx-text-primary
+           transition-colors duration-150 cursor-pointer select-none;
+  }
+  .sidebar-item-active {
+    @apply bg-dx-card text-dx-accent border-l-[3px] border-dx-accent;
+  }
+  .sidebar-subitem {
+    @apply flex items-center gap-3 pl-12 pr-4 py-2.5 mx-2 rounded-lg text-sm
+           text-dx-text-secondary hover:bg-dx-card-hover hover:text-dx-text-primary
+           transition-colors duration-150 cursor-pointer select-none;
+  }
+  .sidebar-subitem-active {
+    @apply text-dx-accent bg-dx-card;
+  }
+}
