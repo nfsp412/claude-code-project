@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { jsonApi } from '../api/json';
-import { DocumentCopy, DocumentDelete, MagicStick, Minus, Select } from '@element-plus/icons-vue';
+import { DocumentCopy, DocumentDelete, Link, MagicStick, Minus, Select } from '@element-plus/icons-vue';
 import { ElMessage, ElSelect, ElOption } from 'element-plus';
 import { jsonSamples } from '../data/samples';
 import type { ContentValidateResult, ColumnMismatch } from '../types';
@@ -97,6 +97,10 @@ const clearAll = () => {
   output.value = '';
   isValid.value = true;
   errorMessage.value = '';
+};
+
+const goDeepSeek = () => {
+  window.open('https://www.deepseek.com/', '_blank');
 };
 
 const copyOutput = async () => {
@@ -217,6 +221,13 @@ const getMismatchStatus = (m: ColumnMismatch): string => {
             @click="clearAll"
           >
             清空
+          </el-button>
+          <el-button
+            :icon="Link"
+            class="deepseek-btn"
+            @click="goDeepSeek"
+          >
+            跳转deepseek
           </el-button>
         </div>
       </div>
@@ -503,6 +514,18 @@ const getMismatchStatus = (m: ColumnMismatch): string => {
 .clear-btn:hover {
   background-color: #909eb0 !important;
   border-color: #909eb0 !important;
+}
+
+.deepseek-btn {
+  background-color: #ffffff !important;
+  border-color: #ffffff !important;
+  color: #1a1a2e !important;
+}
+
+.deepseek-btn:hover {
+  background-color: #e2e8f0 !important;
+  border-color: #e2e8f0 !important;
+  color: #1a1a2e !important;
 }
 
 .minify-btn {
