@@ -171,6 +171,10 @@ const validateColumns = async () => {
   }
 };
 
+const goToClaude = () => {
+  window.open('https://claude.ai', '_blank');
+};
+
 const getMismatchStatus = (m: ColumnMismatch): string => {
   if (m.reader_field === null) return 'Writer 多余';
   if (m.writer_field === null) return 'Reader 多余';
@@ -296,6 +300,13 @@ const getMismatchStatus = (m: ColumnMismatch): string => {
           @click="copyOutput"
         >
           复制
+        </el-button>
+        <el-button
+          :icon="Link"
+          class="claude-btn"
+          @click="goToClaude"
+        >
+          跳转claude
         </el-button>
       </div>
     </div>
@@ -677,6 +688,17 @@ const getMismatchStatus = (m: ColumnMismatch): string => {
   border-color: #16a34a !important;
   box-shadow: 0 0 25px rgba(34, 197, 94, 0.6);
   transform: translateY(-1px);
+}
+
+.claude-btn {
+  background-color: #ef4444 !important;
+  border-color: #ef4444 !important;
+  color: #fff !important;
+}
+
+.claude-btn:hover {
+  background-color: #dc2626 !important;
+  border-color: #dc2626 !important;
 }
 
 /* 字段校验弹窗 - 暗黑主题 */

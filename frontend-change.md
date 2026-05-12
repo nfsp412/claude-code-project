@@ -6,7 +6,7 @@
 
 ### 变更内容
 
-1. **新增按钮** (输入区域 button-group): 
+1. **新增按钮** (输入区域 button-group):
    - 白色背景 (`#ffffff`), 深色文字 (`#1a1a2e`)
    - 文字: "跳转deepseek"
    - 图标: Link (来自 @element-plus/icons-vue)
@@ -15,3 +15,12 @@
 2. **新增方法**: `goDeepSeek()` - 使用 `window.open('https://www.deepseek.com/', '_blank')` 跳转到 DeepSeek 官网
 
 3. **新增样式**: `.deepseek-btn` - 白色按钮，hover 时变为浅灰 (`#e2e8f0`)
+
+## 新增"跳转claude"按钮
+
+### `json-parser/frontend/src/components/JsonFormatter.vue`
+
+1. **导入 Link 图标**: 从 `@element-plus/icons-vue` 导入 `Link` 图标
+2. **新增 `goToClaude` 方法**: 点击按钮时在新标签页打开 `https://claude.ai`
+3. **模板新增按钮**: 在输出区域的按钮组中添加红色 "跳转claude" 按钮
+4. **样式**: 新增 `.claude-btn` 样式类，背景色 `#ef4444`，hover 时 `#dc2626`
