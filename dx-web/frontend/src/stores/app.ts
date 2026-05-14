@@ -21,6 +21,7 @@ export const useAppStore = defineStore('app', () => {
     { key: 'cluster', label: 'DataX执行集群管理', icon: 'Server', path: '/cluster' },
     { key: 'resource', label: '资源使用监控', icon: 'Activity', path: '/resource' },
     { key: 'json-tool', label: 'JSON格式化', icon: 'Braces', path: '/json-tool' },
+    { key: 'task-canvas', label: '节点画布', icon: 'GitGraph', path: '/task-canvas' },
   ]);
 
   function toggleSidebar() {

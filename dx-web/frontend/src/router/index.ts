@@ -62,6 +62,12 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/JsonToolView.vue'),
     meta: { title: 'JSON格式化' },
   },
+  {
+    path: '/task-canvas',
+    name: 'task-canvas',
+    component: () => import('@/views/TaskCanvasView.vue'),
+    meta: { title: '节点画布' },
+  },
 ];
 
 const router = createRouter({

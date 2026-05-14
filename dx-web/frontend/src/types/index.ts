@@ -72,3 +72,21 @@ export interface HighlightedTask {
   id: string;
   name: string;
 }
+
+export interface TaskCanvasNode {
+  id: string;
+  name: string;
+  status: 'running' | 'pending' | 'failed' | 'success' | 'offline';
+  x: number;
+  y: number;
+  upstreamIds: string[];
+  description?: string;
+}
+
+export interface CanvasInfo {
+  name: string;
+  description: string;
+  canvasId: string;
+  owner: string;
+  group: string;
+}

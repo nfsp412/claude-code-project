@@ -72,5 +72,7 @@ const iconPaths: Record<string, () => VNode> = {
     h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M22 12h-4l-3 9L9 3l-3 9H2' }),
   Braces: () =>
     h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M8 3H7a2 2 0 00-2 2v2.5c0 1.5-1 2-1 2s1 .5 1 2V14a2 2 0 002 2h1m8-14h1a2 2 0 012 2v2.5c0 1.5 1 2 1 2s-1 .5-1 2V14a2 2 0 01-2 2h-1' }),
+  GitGraph: () =>
+    h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M12 3v3m0 4v10M6 9a3 3 0 110-6 3 3 0 010 6zm12 0a3 3 0 110-6 3 3 0 010 6zM6 9v12m12-8v8M6 15l6-2 6 2' }),
 };
 </script>

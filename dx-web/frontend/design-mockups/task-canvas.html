@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>节点画布 — DataX 监控调度平台</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        'dx-page': '#0A0E1A', 'dx-navbar': '#111827', 'dx-sidebar': '#0C1222',
+        'dx-card': '#1A2236', 'dx-card-hover': '#1E293B', 'dx-input': '#131B2B',
+        'dx-accent': '#06B6D4', 'dx-accent-secondary': '#3B82F6',
+        'dx-text-primary': '#E2E8F0', 'dx-text-secondary': '#94A3B8', 'dx-text-muted': '#64748B',
+        'dx-border': '#1E293B', 'dx-border-active': '#06B6D4',
+        'dx-success': '#10B981', 'dx-warning': '#F59E0B', 'dx-danger': '#EF4444',
+      }
+    }
+  }
+}
+</script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #0A0E1A; color: #E2E8F0; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #1E293B; border-radius: 3px; }
+
+  /* Canvas task nodes */
+  .task-node {
+    position: absolute; min-width: 160px; background: #1A2236;
+    border: 1.5px solid #1E293B; border-radius: 8px; padding: 12px 14px;
+    cursor: grab; transition: box-shadow 0.15s, border-color 0.15s; user-select: none;
+    z-index: 10;
+  }
+  .task-node:hover { border-color: #06B6D4; box-shadow: 0 0 12px rgba(6,182,212,0.15); }
+  .task-node.selected { border-color: #06B6D4; box-shadow: 0 0 16px rgba(6,182,212,0.25); }
+  .task-node.dragging { opacity: 0.7; cursor: grabbing; }
+  .task-node.running { border-left: 3px solid #10B981; }
+  .task-node.pending { border-left: 3px solid #F59E0B; }
+  .task-node.failed { border-left: 3px solid #EF4444; }
+
+  /* Tool buttons */
+  .canvas-tool-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 5px 10px; border-radius: 5px; font-size: 12px; font-weight: 500;
+    transition: all 0.15s; cursor: pointer;
+  }
+
+  /* SVG connector lines */
+  .connector-line { stroke: #334155; stroke-width: 1.5; fill: none; }
+  .connector-line:hover { stroke: #06B6D4; stroke-width: 2; }
+  .connector-arrow { fill: #334155; }
+</style>
+</head>
+<body class="min-h-screen bg-dx-page flex flex-col h-screen overflow-hidden">
+
+<!-- ====== Top Search Bar ====== -->
+<div class="bg-dx-card border-b border-dx-border px-5 py-3 flex items-center gap-3 flex-shrink-0">
+  <h1 class="text-lg font-semibold text-dx-text-primary mr-2">节点画布</h1>
+  <div class="flex-1 max-w-md flex items-center gap-2 bg-dx-input border border-dx-border rounded-md px-3 py-1.5">
+    <span class="text-xs text-dx-text-muted whitespace-nowrap">Task ID:</span>
+    <input type="text" placeholder="输入Task ID搜索..." class="flex-1 bg-transparent border-none outline-none text-sm text-dx-text-primary placeholder:text-dx-text-muted/50">
+  </div>
+  <button class="canvas-tool-btn bg-dx-accent text-white hover:bg-cyan-500">搜索</button>
+  <button class="canvas-tool-btn bg-dx-card text-dx-text-muted border border-dx-border hover:text-dx-text-primary">重置</button>
+</div>
+
+<!-- ====== Main Content ====== -->
+<div class="flex flex-1 overflow-hidden">
+
+  <!-- Left: Toolbar -->
+  <div class="bg-dx-sidebar border-r border-dx-border p-3 flex flex-col gap-1.5 w-12 items-center flex-shrink-0">
+    <button class="w-8 h-8 rounded-md flex items-center justify-center hover:bg-dx-card-hover text-dx-text-muted hover:text-dx-accent transition-colors" title="新增Task">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+    </button>
+    <button class="w-8 h-8 rounded-md flex items-center justify-center hover:bg-dx-card-hover text-dx-text-muted hover:text-dx-success transition-colors" title="上线Task">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </button>
+    <button class="w-8 h-8 rounded-md flex items-center justify-center hover:bg-dx-card-hover text-dx-text-muted hover:text-dx-warning transition-colors" title="下线Task">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    </button>
+    <button class="w-8 h-8 rounded-md flex items-center justify-center hover:bg-dx-card-hover text-dx-text-muted hover:text-dx-danger transition-colors" title="删除Task">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+    </button>
+    <div class="flex-1"></div>
+    <button class="w-8 h-8 rounded-md flex items-center justify-center hover:bg-dx-card-hover text-dx-text-muted hover:text-dx-accent transition-colors" title="连线模式">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+    </button>
+  </div>
+
+  <!-- Center: Canvas -->
+  <div class="flex-1 relative overflow-auto bg-dx-page" style="background-image: radial-gradient(circle, #1E293B 1px, transparent 1px); background-size: 24px 24px;">
+    <svg class="absolute inset-0 w-full h-full pointer-events-none" style="z-index: 5;">
+      <!-- Connector lines -->
+      <defs><marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" class="connector-arrow"/></marker></defs>
+      <path d="M300 160 L420 280" class="connector-line" marker-end="url(#arrowhead)" style="pointer-events: stroke;"/>
+      <path d="M460 160 L340 280" class="connector-line" marker-end="url(#arrowhead)" style="pointer-events: stroke;"/>
+      <path d="M460 160 L540 280" class="connector-line" marker-end="url(#arrowhead)" style="pointer-events: stroke;"/>
+    </svg>
+
+    <!-- Task Nodes -->
+    <div style="position: relative; width: 100%; height: 100%; min-width: 800px; min-height: 600px;">
+      <!-- Root task -->
+      <div class="task-node running" style="left: 340px; top: 60px;">
+        <div class="text-xs text-dx-text-muted">Task ID: DX-001</div>
+        <div class="text-sm font-medium text-dx-text-primary mt-0.5">数据同步主任务</div>
+        <div class="flex items-center gap-1.5 mt-2">
+          <span class="w-1.5 h-1.5 rounded-full bg-dx-success"></span>
+          <span class="text-2xs text-dx-success">运行中</span>
+        </div>
+      </div>
+
+      <!-- Upstream dependencies -->
+      <div class="task-node running" style="left: 120px; top: 260px;">
+        <div class="text-xs text-dx-text-muted">Task ID: DX-002</div>
+        <div class="text-sm font-medium text-dx-text-primary mt-0.5">MySQL数据抽取</div>
+        <div class="flex items-center gap-1.5 mt-2">
+          <span class="w-1.5 h-1.5 rounded-full bg-dx-success"></span>
+          <span class="text-2xs text-dx-success">运行中</span>
+        </div>
+      </div>
+
+      <div class="task-node pending" style="left: 340px; top: 260px;">
+        <div class="text-xs text-dx-text-muted">Task ID: DX-003</div>
+        <div class="text-sm font-medium text-dx-text-primary mt-0.5">数据清洗转换</div>
+        <div class="flex items-center gap-1.5 mt-2">
+          <span class="w-1.5 h-1.5 rounded-full bg-dx-warning"></span>
+          <span class="text-2xs text-dx-warning">等待上游</span>
+        </div>
+      </div>
+
+      <div class="task-node failed" style="left: 560px; top: 260px;">
+        <div class="text-xs text-dx-text-muted">Task ID: DX-004</div>
+        <div class="text-sm font-medium text-dx-text-primary mt-0.5">ClickHouse写入</div>
+        <div class="flex items-center gap-1.5 mt-2">
+          <span class="w-1.5 h-1.5 rounded-full bg-dx-danger"></span>
+          <span class="text-2xs text-dx-danger">失败</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Info Panel -->
+  <div class="w-72 bg-dx-card border-l border-dx-border flex-shrink-0 overflow-y-auto">
+    <div class="p-4 border-b border-dx-border">
+      <h3 class="text-sm font-semibold text-dx-text-primary">画布信息</h3>
+    </div>
+    <div class="p-4 flex flex-col gap-4">
+      <!-- Name -->
+      <div class="flex flex-col gap-1">
+        <label class="text-2xs font-medium text-dx-text-muted uppercase tracking-wide">名称</label>
+        <div class="text-sm text-dx-text-primary">数据同步流程图</div>
+      </div>
+      <!-- Description -->
+      <div class="flex flex-col gap-1">
+        <label class="text-2xs font-medium text-dx-text-muted uppercase tracking-wide">描述信息</label>
+        <div class="text-sm text-dx-text-secondary">展示MySQL到ClickHouse的数据同步流程，包含数据抽取、清洗和写入三个关键步骤</div>
+      </div>
+      <!-- Canvas ID -->
+      <div class="flex flex-col gap-1">
+        <label class="text-2xs font-medium text-dx-text-muted uppercase tracking-wide">画布 ID</label>
+        <div class="text-sm text-dx-text-primary font-mono">CANVAS-DX-20240515-001</div>
+      </div>
+      <!-- Owner -->
+      <div class="flex flex-col gap-1">
+        <label class="text-2xs font-medium text-dx-text-muted uppercase tracking-wide">所属用户</label>
+        <div class="text-sm text-dx-text-primary">张工</div>
+      </div>
+      <!-- User Group -->
+      <div class="flex flex-col gap-1">
+        <label class="text-2xs font-medium text-dx-text-muted uppercase tracking-wide">所属用户组</label>
+        <div class="text-sm text-dx-text-primary">数据平台组</div>
+      </div>
+
+      <div class="border-t border-dx-border pt-4 mt-2">
+        <h4 class="text-xs font-semibold text-dx-text-primary mb-2">统计</h4>
+        <div class="flex flex-col gap-2">
+          <div class="flex justify-between text-xs">
+            <span class="text-dx-text-muted">总Task数</span><span class="text-dx-text-primary font-mono">4</span>
+          </div>
+          <div class="flex justify-between text-xs">
+            <span class="text-dx-text-muted">运行中</span><span class="text-dx-success font-mono">2</span>
+          </div>
+          <div class="flex justify-between text-xs">
+            <span class="text-dx-text-muted">等待中</span><span class="text-dx-warning font-mono">1</span>
+          </div>
+          <div class="flex justify-between text-xs">
+            <span class="text-dx-text-muted">已失败</span><span class="text-dx-danger font-mono">1</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
