@@ -73,7 +73,7 @@
 
 ```
 总结性的标题,可以引用具体的文件
-* 第一点:可以使用Functionality
+* 第一点:可以使用Functionality 当我们在后端代码新增功能的时候,感觉可以使用这种提示词
  - input 输入的样子
  - output 应该输出的样子
 * 第二点等等
@@ -175,6 +175,8 @@ think a lot
 
 - 在PreToolUse生命周期进行分支创建
 - 在PostToolUse生命周期进行打包提交测试分支
+- 注意:这个问题的根本原因：斜杠命令 /implements-features 加载 skill 时，系统直接将 skill 内容注入到 prompt，不会调用 Skill 工具。所以 PreToolUse → 
+  matcher: "Skill" 的 hook 不会被触发。
 
 # MCP
 
@@ -198,6 +200,8 @@ i want change this button's color to yellow
 ### figma
 
 - 命令行安装内置的figma插件 claude plugin install figma@claude-plugins-official
+- 或者:使用/plugins浏览和安装plugin;和/reload-plugins生效plugin
+- claude mcp add --scope user --transport http figma https://mcp.figma.com/mcp 这个是什么作用?
 - 可以在claude中文字性描述,直接生成figma设计稿,例如下面;claude会触发两个skill figma:figma-generate-design 和 figma:figma-use
 
 ```
@@ -238,9 +242,9 @@ i want change this button's color to yellow
 
 - skill的name和description在agent的context中,但是直到用户的请求匹配到了description才会加载这个skill
 - 读写文件目录的权限,以及一个批处理工具去执行代码
-- 打包zip
+- 注意事项:打包zip;name使用小写字母,使用破折号,不要使用关键字例如claude或者anthropic
 - 渐进式披露:避免污染context,只加载必要的数据
-
+- skill的结构
 ```
 create-table-skill/
 ├── SKILL.md
@@ -253,6 +257,19 @@ create-table-skill/
 ├── assets
 ```
 
-### 结合tools,MCP,子agent使用
+### 区别和联系
 
 ![alt text](static/image.png)
+![alt text](static/image-2.png)
+![alt text](static/image-3.png)
+![alt text](static/image-4.png)
+![alt text](static/image-5.png)
+- mcp:当你使用外部系统的工具和资源的时候,你应该思考有没有对应的mcp服务
+- skill:可重复使用的工作流程
+- tools:更底层的由模型提供的一些些功能,也可以自定义tool(暂时不知道怎么实现);也可以通过mcp服务添加tool
+- command:可以自定义一个command,在claude中,体现为/xxx进行调用;没有动态逻辑、没有条件分支;对于claude来说,也被加载为一个skill了,从 /skills 里面可以体现
+- subagents:拥有个人私有的context和tools的权限
+
+### skill creator
+
+- 

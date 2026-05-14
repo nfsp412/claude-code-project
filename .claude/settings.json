@@ -1,10 +1,26 @@
 {
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Read",
-        "hooks": []
-      }
-    ]
-  }
+    "hooks": {
+        "PostToolUse": [
+            {
+                "matcher": "Read",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "say -v TingTing \"hello world\" "
+                    }
+                ]
+            }
+        ],
+        "PreToolUse": [
+            {
+                "matcher": "Skill",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": ".claude/hooks/pre-implements-features.sh"
+                    }
+                ]
+            }
+        ]
+    }
 }

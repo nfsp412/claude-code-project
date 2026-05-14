@@ -263,6 +263,18 @@ const getMismatchStatus = (m: ColumnMismatch): string => {
           >
             跳转deepseek
           </el-button>
+          <el-button
+            class="test-btn-1"
+            @click="() => {}"
+          >
+            测试按钮1
+          </el-button>
+          <el-button
+            class="test-btn-2"
+            @click="() => {}"
+          >
+            测试按钮2
+          </el-button>
         </div>
       </div>
     </div>
@@ -649,6 +661,32 @@ const getMismatchStatus = (m: ColumnMismatch): string => {
   background-color: #e2e8f0 !important;
   border-color: #e2e8f0 !important;
   color: #1a1a2e !important;
+}
+
+.test-btn-1 {
+  background-color: #facc15 !important;
+  border-color: #facc15 !important;
+  color: #1a1a2e !important;
+  font-weight: 600 !important;
+}
+
+.test-btn-1:hover {
+  background-color: #eab308 !important;
+  border-color: #eab308 !important;
+  color: #1a1a2e !important;
+}
+
+.test-btn-2 {
+  background-color: #22c55e !important;
+  border-color: #22c55e !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+}
+
+.test-btn-2:hover {
+  background-color: #16a34a !important;
+  border-color: #16a34a !important;
+  color: #fff !important;
 }
 
 .minify-btn {
