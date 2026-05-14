@@ -1,94 +1,263 @@
 <template>
   <div class="p-6 flex flex-col gap-4">
+    <!-- Breadcrumb + Title -->
     <div class="flex flex-col gap-1">
       <div class="flex items-center gap-2 text-xs text-dx-text-muted">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+        </svg>
         <span>/</span><span class="text-dx-accent">日志查询</span>
       </div>
       <h1 class="text-xl font-bold text-dx-text-primary">日志查询</h1>
     </div>
 
-    <!-- Search & Filter -->
-    <div class="bg-dx-card border border-dx-border rounded-lg p-4">
-      <div class="flex flex-wrap items-end gap-3 mb-3">
-        <div class="flex flex-col gap-1.5"><label class="text-2xs font-medium text-dx-text-muted uppercase">任务 ID</label><input v-model="filters.taskId" type="text" placeholder="DX-20240512-001" class="w-44 h-9 px-3 rounded-md bg-dx-input border border-dx-border text-sm text-dx-text-primary font-mono placeholder:text-dx-text-muted/50 focus:outline-none focus:border-dx-accent transition-colors"></div>
-        <div class="flex flex-col gap-1.5"><label class="text-2xs font-medium text-dx-text-muted uppercase">关键字</label><input v-model="filters.keyword" type="text" placeholder="搜索日志内容..." class="w-48 h-9 px-3 rounded-md bg-dx-input border border-dx-border text-sm text-dx-text-primary placeholder:text-dx-text-muted/50 focus:outline-none focus:border-dx-accent transition-colors"></div>
-        <div class="flex flex-col gap-1.5"><label class="text-2xs font-medium text-dx-text-muted uppercase">时间范围</label><select v-model="filters.timeRange" class="h-9 px-3 rounded-md bg-dx-input border border-dx-border text-sm text-dx-text-primary focus:outline-none focus:border-dx-accent"><option>最近 1 小时</option><option>最近 6 小时</option><option>最近 24 小时</option><option>自定义...</option></select></div>
-        <div class="flex flex-col gap-1.5"><label class="text-2xs font-medium text-dx-text-muted uppercase">日志级别</label><select v-model="filters.level" class="h-9 px-3 rounded-md bg-dx-input border border-dx-border text-sm text-dx-text-primary focus:outline-none focus:border-dx-accent"><option value="">全部级别</option><option>ERROR</option><option>WARN</option><option>INFO</option><option>DEBUG</option></select></div>
-        <button class="h-9 px-5 rounded-md bg-dx-accent hover:bg-cyan-500 text-white text-sm font-medium transition-colors flex items-center gap-1.5" @click="doSearch"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="M21 21l-4.3-4.3"/></svg>查询</button>
-        <button class="h-9 px-4 rounded-md border border-dx-border text-sm text-dx-text-secondary hover:bg-dx-card-hover transition-colors" @click="resetFilters">重置</button>
+    <!-- Search Bar -->
+    <div class="bg-dx-card border border-dx-border rounded-lg p-4 flex flex-wrap items-end gap-3">
+      <div class="flex flex-col gap-1.5">
+        <label class="text-2xs font-medium text-dx-text-muted uppercase tracking-wide">任务 ID</label>
+        <input
+          v-model="filters.taskId"
+          type="text"
+          placeholder="例如: DX-20240512"
+          class="w-44 h-9 px-3 rounded-md bg-dx-input border border-dx-border text-sm text-dx-text-primary placeholder:text-dx-text-muted/50 focus:outline-none focus:border-dx-accent transition-colors"
+          @keyup.enter="handleSearch"
+        />
       </div>
-      <div class="flex items-center gap-2">
-        <span class="text-2xs text-dx-text-muted">快速筛选:</span>
-        <button v-for="lvl in quickLevels" :key="lvl" class="text-xs px-2.5 py-1 rounded-full transition-colors" :class="lvl === 'ERROR' ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20' : lvl === 'WARN' ? 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20' : lvl === 'INFO' ? 'bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20' : 'bg-dx-input text-dx-text-muted hover:bg-dx-card-hover'" @click="filters.level = filters.level === lvl ? '' : lvl; doSearch()">{{ lvl }}</button>
-        <span class="text-xs text-dx-text-muted ml-auto">共 <span class="text-dx-text-primary font-semibold">{{ filteredTotal.toLocaleString() }}</span> 条日志</span>
+      <div class="flex flex-col gap-1.5">
+        <label class="text-2xs font-medium text-dx-text-muted uppercase tracking-wide">任务名称</label>
+        <input
+          v-model="filters.taskName"
+          type="text"
+          placeholder="输入任务名称"
+          class="w-48 h-9 px-3 rounded-md bg-dx-input border border-dx-border text-sm text-dx-text-primary placeholder:text-dx-text-muted/50 focus:outline-none focus:border-dx-accent transition-colors"
+          @keyup.enter="handleSearch"
+        />
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <label class="text-2xs font-medium text-dx-text-muted uppercase tracking-wide">日志 ID</label>
+        <input
+          v-model="filters.logId"
+          type="text"
+          placeholder="例如: LOG-20240512"
+          class="w-44 h-9 px-3 rounded-md bg-dx-input border border-dx-border text-sm text-dx-text-primary placeholder:text-dx-text-muted/50 focus:outline-none focus:border-dx-accent transition-colors"
+          @keyup.enter="handleSearch"
+        />
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <label class="text-2xs font-medium text-dx-text-muted uppercase tracking-wide">关键字搜索</label>
+        <input
+          v-model="filters.keyword"
+          type="text"
+          placeholder="关键字搜索"
+          class="w-52 h-9 px-3 rounded-md bg-dx-input border border-dx-border text-sm text-dx-text-primary placeholder:text-dx-text-muted/50 focus:outline-none focus:border-dx-accent transition-colors"
+          @keyup.enter="handleSearch"
+        />
+      </div>
+      <button
+        class="h-9 px-5 rounded-md bg-dx-accent hover:bg-cyan-500 text-white text-sm font-medium transition-colors flex items-center gap-1.5"
+        @click="handleSearch"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="M21 21l-4.3-4.3"/>
+        </svg>
+        搜索
+      </button>
+      <button
+        class="h-9 px-4 rounded-md border border-dx-border text-sm text-dx-text-secondary hover:bg-dx-card-hover hover:text-dx-text-primary transition-colors"
+        @click="handleReset"
+      >
+        重置
+      </button>
+      <div class="ml-auto text-xs text-dx-text-muted">
+        共 <span class="text-dx-text-primary font-semibold">{{ filteredTotal }}</span> 条日志记录
       </div>
     </div>
 
-    <!-- Log Stream -->
+    <!-- Data Table -->
     <div class="bg-dx-card border border-dx-border rounded-lg overflow-hidden">
-      <div class="flex items-center justify-between px-4 py-2.5 border-b border-dx-border bg-dx-input/50">
-        <div class="flex items-center gap-4 text-xs"><button class="font-medium" :class="liveMode ? 'text-dx-accent' : 'text-dx-text-muted hover:text-dx-text-secondary'" @click="liveMode = !liveMode">{{ liveMode ? '● 实时跟踪' : '实时跟踪' }}</button><button class="text-dx-text-muted hover:text-dx-text-secondary" @click="liveMode = false">暂停</button></div>
-        <div class="flex items-center gap-3 text-xs"><button class="text-dx-text-muted hover:text-dx-text-secondary">自动滚动</button><button class="text-dx-text-muted hover:text-dx-text-secondary">导出</button></div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="bg-dx-input border-b border-dx-border">
+              <th class="text-left py-3 px-4 text-xs font-medium text-dx-text-muted uppercase tracking-wide whitespace-nowrap">任务 ID</th>
+              <th class="text-left py-3 px-4 text-xs font-medium text-dx-text-muted uppercase tracking-wide whitespace-nowrap">日志 ID</th>
+              <th class="text-left py-3 px-4 text-xs font-medium text-dx-text-muted uppercase tracking-wide whitespace-nowrap">任务名称</th>
+              <th class="text-center py-3 px-4 text-xs font-medium text-dx-text-muted uppercase tracking-wide whitespace-nowrap w-[90px]">执行结果</th>
+              <th class="text-left py-3 px-4 text-xs font-medium text-dx-text-muted uppercase tracking-wide whitespace-nowrap">任务执行传参</th>
+              <th class="text-left py-3 px-4 text-xs font-medium text-dx-text-muted uppercase tracking-wide whitespace-nowrap">任务开始时间</th>
+              <th class="text-left py-3 px-4 text-xs font-medium text-dx-text-muted uppercase tracking-wide whitespace-nowrap">任务结束时间</th>
+              <th class="text-right py-3 px-4 text-xs font-medium text-dx-text-muted uppercase tracking-wide whitespace-nowrap w-[120px]">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="log in paginatedLogs"
+              :key="log.logId"
+              class="border-b border-dx-border/50 hover:bg-dx-card-hover transition-colors"
+            >
+              <td class="py-3 px-4 font-mono text-xs text-dx-accent whitespace-nowrap">{{ log.taskId }}</td>
+              <td class="py-3 px-4 font-mono text-xs text-dx-text-secondary whitespace-nowrap">{{ log.logId }}</td>
+              <td class="py-3 px-4 text-dx-text-primary font-medium whitespace-nowrap">{{ log.taskName }}</td>
+              <td class="py-3 px-4 text-center">
+                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium" :class="statusBadgeClass(log.result)">
+                  <span class="w-1.5 h-1.5 rounded-full" :class="statusDotClass(log.result)" />
+                  {{ statusLabel(log.result) }}
+                </span>
+              </td>
+              <td class="py-3 px-4 text-xs text-dx-text-secondary max-w-[200px]">
+                <span class="font-mono text-2xs text-dx-text-muted truncate block" :title="log.params">{{ log.params }}</span>
+              </td>
+              <td class="py-3 px-4 text-xs text-dx-text-secondary font-mono whitespace-nowrap">{{ log.startTime }}</td>
+              <td class="py-3 px-4 text-xs text-dx-text-secondary font-mono whitespace-nowrap">{{ log.endTime }}</td>
+              <td class="py-3 px-4 text-right">
+                <div class="flex items-center justify-end gap-2">
+                  <button
+                    class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-medium bg-dx-accent/10 text-dx-accent hover:bg-dx-accent/20 transition-colors"
+                    @click="handleViewLog(log)"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM14 2v6h6M9 15h6"/>
+                    </svg>
+                    日志查询
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-      <div class="font-mono text-xs leading-relaxed overflow-x-auto" style="max-height: 600px; overflow-y: auto;" ref="logContainer">
-        <div v-for="(log, i) in filteredLogs" :key="i" class="flex border-b border-dx-border/30 hover:bg-dx-card-hover/50 transition-colors">
-          <span class="w-44 flex-shrink-0 px-4 py-2 text-dx-text-muted border-r border-dx-border/30">{{ log.time }}</span>
-          <span class="w-16 flex-shrink-0 px-2 py-2 font-semibold" :class="levelStyle(log.level)">{{ log.level }}</span>
-          <span class="w-32 flex-shrink-0 px-2 py-2 text-dx-text-muted">{{ log.taskId }}</span>
-          <span class="px-2 py-2" :class="log.level === 'ERROR' ? 'text-dx-text-secondary bg-red-500/5' : log.level === 'WARN' ? 'text-dx-text-secondary bg-amber-500/5' : log.level === 'INFO' ? 'text-dx-text-secondary bg-cyan-500/5' : 'text-dx-text-muted'" v-html="highlightMsg(log.msg)" />
+
+      <!-- Empty state -->
+      <div v-if="filteredTotal === 0" class="py-16 text-center">
+        <svg class="w-12 h-12 mx-auto text-dx-text-muted/30 mb-3" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM14 2v6h6"/>
+        </svg>
+        <p class="text-sm text-dx-text-muted">暂无日志记录</p>
+      </div>
+
+      <!-- Pagination -->
+      <div class="flex items-center justify-between px-4 py-3 border-t border-dx-border bg-dx-card-hover/30">
+        <span class="text-xs text-dx-text-muted">显示第 {{ pageStart }}-{{ pageEnd }} 条，共 {{ filteredTotal }} 条</span>
+        <div class="flex items-center gap-1">
+          <button
+            class="inline-flex items-center justify-center w-8 h-8 rounded-md text-xs transition-colors"
+            :class="currentPage === 1 ? 'text-dx-text-muted/40 cursor-not-allowed' : 'text-dx-text-secondary hover:bg-dx-card-hover hover:text-dx-text-primary'"
+            :disabled="currentPage === 1"
+            @click="goToPage(currentPage - 1)"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+          </button>
+          <button
+            v-for="p in displayPages"
+            :key="p"
+            class="inline-flex items-center justify-center w-8 h-8 rounded-md text-xs font-medium transition-colors"
+            :class="p === currentPage ? 'bg-dx-accent text-white' : 'text-dx-text-secondary hover:bg-dx-card-hover hover:text-dx-text-primary'"
+            @click="goToPage(p)"
+          >
+            {{ p }}
+          </button>
+          <button
+            class="inline-flex items-center justify-center w-8 h-8 rounded-md text-xs transition-colors"
+            :class="currentPage === totalPages ? 'text-dx-text-muted/40 cursor-not-allowed' : 'text-dx-text-secondary hover:bg-dx-card-hover hover:text-dx-text-primary'"
+            :disabled="currentPage === totalPages"
+            @click="goToPage(currentPage + 1)"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+          </button>
         </div>
       </div>
-      <div class="flex items-center justify-between px-4 py-3 border-t border-dx-border bg-dx-card-hover/30">
-        <span class="text-xs text-dx-text-muted">显示第 1-{{ filteredLogs.length }} 条 (共 {{ filteredTotal.toLocaleString() }} 条)</span>
-        <div class="flex items-center gap-1"><button class="w-8 h-8 rounded-md text-xs text-dx-text-secondary hover:bg-dx-card-hover">‹</button><button class="w-8 h-8 rounded-md text-xs font-medium bg-dx-accent text-white">1</button><button class="w-8 h-8 rounded-md text-xs text-dx-text-secondary hover:bg-dx-card-hover">2</button><button class="w-8 h-8 rounded-md text-xs text-dx-text-secondary hover:bg-dx-card-hover">3</button><span class="text-xs text-dx-text-muted">···</span><button class="w-8 h-8 rounded-md text-xs text-dx-text-secondary hover:bg-dx-card-hover">1606</button><button class="w-8 h-8 rounded-md text-xs text-dx-text-secondary hover:bg-dx-card-hover">›</button></div>
-      </div>
     </div>
+
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue';
+import { useAppStore } from '@/stores/app';
 
-const liveMode = ref(true);
-const quickLevels = ['ERROR', 'WARN', 'INFO', 'DEBUG'];
+const store = useAppStore();
 
-const filters = reactive({ taskId: '', keyword: '', timeRange: '最近 1 小时', level: '' });
-
-interface LogEntry { time: string; level: string; taskId: string; msg: string; }
-const allLogs: LogEntry[] = [
-  { time: '05-12 18:45:22.341', level: 'ERROR', taskId: 'DX-20240512-004', msg: 'Connection refused to 10.23.45.104:3306 — retry 3/3 exhausted' },
-  { time: '05-12 18:45:22.180', level: 'WARN', taskId: 'DX-20240512-004', msg: 'Slow query detected: SELECT * FROM product_info WHERE... took 12.5s' },
-  { time: '05-12 18:45:21.905', level: 'INFO', taskId: 'DX-20240512-003', msg: 'Reader task completed. Fetched 2,458,391 rows in 8m 05s' },
-  { time: '05-12 18:45:21.672', level: 'DEBUG', taskId: 'DX-20240512-003', msg: '[Channel-3] Batch #847 committed, offset=12584000, latency=23ms' },
-  { time: '05-12 18:45:19.004', level: 'INFO', taskId: 'DX-20240512-002', msg: 'Task started. Reader: mysqlreader → Writer: clickhousewriter. Channel: 3' },
-  { time: '05-12 18:45:18.556', level: 'INFO', taskId: 'DX-20240512-001', msg: 'Task completed successfully. Total: 3,827,120 rows, Duration: 3m 42s, Speed: 17.2 MB/s' },
-  { time: '05-12 18:45:17.231', level: 'WARN', taskId: 'DX-20240512-007', msg: 'Memory usage approaching limit. Current heap: 8.2G / 10G' },
-  { time: '05-12 18:45:17.089', level: 'INFO', taskId: 'DX-20240512-007', msg: 'Writer initializing. Target table: dw_user_behavior_agg @ ClickHouse' },
-];
-
-const filteredLogs = computed(() => {
-  let logs = [...allLogs];
-  if (filters.taskId) logs = logs.filter((l) => l.taskId.includes(filters.taskId));
-  if (filters.keyword) logs = logs.filter((l) => l.msg.includes(filters.keyword));
-  if (filters.level) logs = logs.filter((l) => l.level === filters.level);
-  return logs;
-});
-const filteredTotal = computed(() => allLogs.length);
-
-function doSearch() { /* already reactive */ }
-function resetFilters() { filters.taskId = ''; filters.keyword = ''; filters.level = ''; filters.timeRange = '最近 1 小时'; }
-
-function levelStyle(level: string) {
-  const m: Record<string, string> = { ERROR: 'text-red-400', WARN: 'text-amber-400', INFO: 'text-cyan-400', DEBUG: 'text-dx-text-muted' };
-  return m[level] ?? '';
+interface LogRecord {
+  logId: string;
+  taskId: string;
+  taskName: string;
+  result: 'success' | 'running' | 'failed';
+  params: string;
+  startTime: string;
+  endTime: string;
 }
 
-function highlightMsg(msg: string) {
-  return msg
-    .replace(/(\d+\.\d+\.\d+\.\d+:\d+)/g, '<span class="text-dx-accent">$1</span>')
-    .replace(/(\d[\d,.]*(?:\s*(?:MB\/s|rows|s|ms|M|G)))/g, '<span class="text-dx-warning">$1</span>')
-    .replace(/(completed successfully|success|Fetched)/gi, '<span class="text-dx-success">$1</span>')
-    .replace(/(failed|refused|exhausted|error)/gi, '<span class="text-dx-danger">$1</span>');
+const mockLogs: LogRecord[] = [
+  { logId: 'LOG-20240512-001', taskId: 'DX-20240512-001', taskName: '用户行为数据同步', result: 'success', params: '--channel=3 --speed=5MB/s --where="dt=20240512"', startTime: '2024-05-12 10:00:00', endTime: '2024-05-12 10:03:42' },
+  { logId: 'LOG-20240512-002', taskId: 'DX-20240512-002', taskName: '订单数据ETL', result: 'running', params: '--channel=2 --speed=10MB/s --splitPK=order_id', startTime: '2024-05-12 10:05:00', endTime: '—' },
+  { logId: 'LOG-20240512-003', taskId: 'DX-20240512-003', taskName: '日志数据清洗', result: 'success', params: '--channel=3 --memory=8G --where="dt>=20240501"', startTime: '2024-05-12 09:45:00', endTime: '2024-05-12 09:53:05' },
+  { logId: 'LOG-20240512-004', taskId: 'DX-20240512-004', taskName: '商品信息全量同步', result: 'failed', params: '--channel=2 --speed=8MB/s --queryTimeout=300', startTime: '2024-05-12 09:30:00', endTime: '2024-05-12 09:32:33' },
+  { logId: 'LOG-20240512-005', taskId: 'DX-20240512-005', taskName: '用户画像更新', result: 'success', params: '--channel=1 --memory=4G --batchSize=2000', startTime: '2024-05-12 11:00:00', endTime: '2024-05-12 11:08:15' },
+  { logId: 'LOG-20240512-006', taskId: 'DX-20240512-006', taskName: '库存数据增量同步', result: 'running', params: '--channel=2 --speed=5MB/s --where="updated_at>now()-3600"', startTime: '2024-05-12 10:15:00', endTime: '—' },
+  { logId: 'LOG-20240512-007', taskId: 'DX-20240512-007', taskName: '广告投放数据汇总', result: 'success', params: '--channel=3 --memory=10G --preSql="ALTER TABLE ... DELETE"', startTime: '2024-05-12 10:10:00', endTime: '2024-05-12 10:15:50' },
+  { logId: 'LOG-20240512-008', taskId: 'DX-20240512-008', taskName: '财务数据对账', result: 'failed', params: '--channel=2 --speed=3MB/s --retryCount=3', startTime: '2024-05-12 08:00:00', endTime: '2024-05-12 08:02:10' },
+];
+
+const filters = reactive({ taskId: '', taskName: '', logId: '', keyword: '' });
+
+const filteredLogs = computed(() => {
+  let list = [...mockLogs];
+  if (filters.taskId) list = list.filter((l) => l.taskId.toLowerCase().includes(filters.taskId.toLowerCase()));
+  if (filters.taskName) list = list.filter((l) => l.taskName.includes(filters.taskName));
+  if (filters.logId) list = list.filter((l) => l.logId.toLowerCase().includes(filters.logId.toLowerCase()));
+  if (filters.keyword) {
+    const kw = filters.keyword.toLowerCase();
+    list = list.filter((l) => l.taskId.includes(kw) || l.taskName.includes(kw) || l.params.includes(kw));
+  }
+  return list;
+});
+const filteredTotal = computed(() => filteredLogs.value.length);
+
+const pageSize = 10;
+const currentPage = ref(1);
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredTotal.value / pageSize)));
+const pageStart = computed(() => Math.min((currentPage.value - 1) * pageSize + 1, filteredTotal.value));
+const pageEnd = computed(() => Math.min(currentPage.value * pageSize, filteredTotal.value));
+
+const paginatedLogs = computed(() =>
+  filteredLogs.value.slice((currentPage.value - 1) * pageSize, currentPage.value * pageSize)
+);
+
+const displayPages = computed(() => {
+  const pages: number[] = [];
+  const tp = totalPages.value;
+  const cp = currentPage.value;
+  let start = Math.max(1, cp - 2);
+  let end = Math.min(tp, cp + 2);
+  if (end - start < 4) {
+    if (start === 1) end = Math.min(tp, 5);
+    else start = Math.max(1, tp - 4);
+  }
+  for (let i = start; i <= end; i++) pages.push(i);
+  return pages;
+});
+
+function goToPage(p: number) {
+  if (p >= 1 && p <= totalPages.value) currentPage.value = p;
+}
+function handleSearch() { currentPage.value = 1; }
+function handleReset() { filters.taskId = ''; filters.taskName = ''; filters.logId = ''; filters.keyword = ''; currentPage.value = 1; }
+
+function statusLabel(s: string) {
+  return { running: '运行中', success: '成功', failed: '失败' }[s] ?? s;
+}
+function statusBadgeClass(s: string) {
+  return { running: 'bg-cyan-500/10 text-cyan-400', success: 'bg-emerald-500/10 text-emerald-400', failed: 'bg-red-500/10 text-red-400' }[s] ?? '';
+}
+function statusDotClass(s: string) {
+  return { running: 'bg-cyan-400 animate-pulse', success: 'bg-emerald-400', failed: 'bg-red-400' }[s] ?? '';
+}
+
+function handleViewLog(log: LogRecord) {
+  store.openLogDialog({
+    taskId: log.taskId,
+    taskName: log.taskName,
+    params: log.params,
+  });
 }
 </script>

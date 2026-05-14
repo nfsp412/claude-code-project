@@ -6,7 +6,7 @@
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
         </svg>
-        <span>/</span><span class="text-dx-text-muted">任务管理</span><span>/</span><span class="text-dx-accent">任务构建</span>
+        <span>/</span><span class="text-dx-accent">任务构建</span>
       </div>
       <h1 class="text-xl font-bold text-dx-text-primary">任务构建</h1>
     </div>
@@ -283,7 +283,12 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import FieldCheckboxGrid from '@/components/task/FieldCheckboxGrid.vue';
+import { useAppStore } from '@/stores/app';
+
+const router = useRouter();
+const store = useAppStore();
 
 // --- Types ---
 interface FieldDef {
@@ -409,7 +414,9 @@ function buildJson() {
 
 function handleFinish() {
   if (!form.taskName) return;
-  console.log('Task created:', form.taskName, builtJson.value);
+  const generatedId = `DX-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${String(Date.now()).slice(-3)}`;
+  store.setHighlightedTask({ id: generatedId, name: form.taskName });
+  router.push('/tasks/list');
 }
 </script>
 

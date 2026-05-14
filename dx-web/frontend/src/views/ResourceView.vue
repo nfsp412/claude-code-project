@@ -31,29 +31,8 @@
 
     <!-- Charts Row -->
     <div class="grid grid-cols-3 gap-4">
-      <!-- CPU Trend -->
-      <div class="bg-dx-card border border-dx-border rounded-lg p-5 col-span-2">
-        <div class="flex items-center justify-between mb-4"><h3 class="text-sm font-semibold text-dx-text-primary">CPU 使用趋势</h3><div class="flex items-center gap-3"><span class="flex items-center gap-1.5 text-xs text-dx-text-muted"><span class="w-2.5 h-2.5 rounded-sm bg-cyan-400" /> 平均</span><span class="flex items-center gap-1.5 text-xs text-dx-text-muted"><span class="w-2.5 h-2.5 rounded-sm bg-dx-warning" /> 峰值</span></div></div>
-        <div class="flex items-end gap-1 h-44 px-1">
-          <div v-for="(d, i) in cpuTrendData" :key="i" class="flex-1 flex flex-col items-center gap-0.5">
-            <div class="w-full rounded-t-sm" :style="{ height: d.peak * 1.4 + 'px', background: '#F59E0B', opacity: 0.3 }" />
-            <div class="w-full rounded-t-sm" :style="{ height: d.avg * 1.4 + 'px', background: '#06B6D4', marginTop: -(d.peak * 1.4) + 'px' }" />
-          </div>
-        </div>
-        <div class="flex justify-between text-2xs text-dx-text-muted mt-2 px-1"><span>14:00</span><span>15:00</span><span>16:00</span><span>17:00</span><span>18:00</span><span>现在</span></div>
-      </div>
-
-      <!-- Memory Breakdown -->
-      <div class="bg-dx-card border border-dx-border rounded-lg p-5">
-        <h3 class="text-sm font-semibold text-dx-text-primary mb-4">内存分布</h3>
-        <div class="w-32 h-32 mx-auto mb-4 relative">
-          <svg viewBox="0 0 128 128"><circle cx="64" cy="64" r="48" fill="none" stroke="#06B6D4" stroke-width="18" stroke-dasharray="120 181" /><circle cx="64" cy="64" r="48" fill="none" stroke="#10B981" stroke-width="18" stroke-dasharray="105 196" stroke-dashoffset="-120" /><circle cx="64" cy="64" r="48" fill="none" stroke="#F59E0B" stroke-width="18" stroke-dasharray="45 256" stroke-dashoffset="-225" /><circle cx="64" cy="64" r="48" fill="none" stroke="#EF4444" stroke-width="18" stroke-dasharray="31 270" stroke-dashoffset="-270" /></svg>
-          <div class="absolute inset-0 flex items-center justify-center"><span class="text-lg font-bold text-dx-text-primary">78%</span></div>
-        </div>
-        <div class="flex flex-col gap-2 text-xs">
-          <div v-for="seg in memorySegments" :key="seg.label" class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-sm" :style="{ background: seg.color }" /><span class="text-dx-text-secondary">{{ seg.label }}</span><span class="ml-auto text-dx-text-primary font-mono">{{ seg.value }}</span></div>
-        </div>
-      </div>
+      <CpuTrendChart />
+      <MemoryRingChart />
     </div>
 
     <!-- Node Resource Table -->
@@ -84,6 +63,8 @@
 
 <script setup lang="ts">
 import { ref, h } from 'vue';
+import CpuTrendChart from '@/components/charts/CpuTrendChart.vue';
+import MemoryRingChart from '@/components/charts/MemoryRingChart.vue';
 
 const timeRange = ref('realtime');
 const timeOptions = [{ value: 'realtime', label: '实时' },{ value: '1h', label: '1h' },{ value: '6h', label: '6h' },{ value: '24h', label: '24h' }];
@@ -93,15 +74,6 @@ const overviewCards = [
   { label: 'CPU 使用率', value: '67<span class="text-sm text-dx-text-secondary">%</span>', progress: 67, sub: '', iconBg: 'bg-emerald-500/10', iconColor: 'text-emerald-400', barColor: '#10B981', icon: () => h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' }) },
   { label: '内存使用率', value: '78<span class="text-sm text-dx-text-secondary">%</span>', progress: 78, sub: '', iconBg: 'bg-amber-500/10', iconColor: 'text-amber-400', barColor: '#F59E0B', icon: () => h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M20 12H4' }) },
   { label: '磁盘 I/O', value: '320<span class="text-sm text-dx-text-secondary"> MB/s</span>', progress: null, sub: '读: 180 MB/s | 写: 140 MB/s', iconBg: 'bg-purple-500/10', iconColor: 'text-purple-400', barColor: '', icon: () => [h('circle', { cx: '12', cy: '12', r: '10' }), h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M12 6v6l4 2' })] },
-];
-
-const cpuTrendData = Array.from({ length: 24 }, () => ({ avg: 30 + Math.random() * 50, peak: 45 + Math.random() * 40 }));
-
-const memorySegments = [
-  { label: 'DataX Worker', value: '38 GB', color: '#06B6D4' },
-  { label: '系统缓存', value: '28 GB', color: '#10B981' },
-  { label: 'JVM Heap', value: '12 GB', color: '#F59E0B' },
-  { label: '其他', value: '8 GB', color: '#EF4444' },
 ];
 
 const nodeData = [

@@ -6,9 +6,23 @@
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
         </svg>
-        <span>/</span><span class="text-dx-text-muted">任务管理</span><span>/</span><span class="text-dx-accent">任务明细列表</span>
+        <span>/</span><span class="text-dx-accent">任务列表</span>
       </div>
-      <h1 class="text-xl font-bold text-dx-text-primary">任务明细列表</h1>
+      <h1 class="text-xl font-bold text-dx-text-primary">任务列表</h1>
+    </div>
+
+    <!-- Highlighted Task Banner -->
+    <div v-if="store.highlightedTask" class="bg-dx-accent/10 border border-dx-accent/30 rounded-lg px-4 py-3 flex items-center gap-3">
+      <svg class="w-5 h-5 text-dx-accent flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      <span class="text-sm text-dx-text-primary">
+        已构建任务：<span class="font-semibold text-dx-accent">{{ store.highlightedTask.name }}</span>
+        <span class="text-dx-text-muted font-mono">({{ store.highlightedTask.id }})</span>，已加入任务列表。
+      </span>
+      <button class="ml-auto text-xs text-dx-text-muted hover:text-dx-text-primary transition-colors" @click="store.setHighlightedTask(null)">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
     </div>
 
     <!-- Search / Filter Bar -->
@@ -80,10 +94,7 @@
               <th class="text-left py-3 px-4 text-xs font-medium text-dx-text-muted uppercase tracking-wide whitespace-nowrap">任务名称</th>
               <th class="text-left py-3 px-4 text-xs font-medium text-dx-text-muted uppercase tracking-wide whitespace-nowrap">所属用户</th>
               <th class="text-left py-3 px-4 text-xs font-medium text-dx-text-muted uppercase tracking-wide whitespace-nowrap">所属组</th>
-              <th class="text-center py-3 px-4 text-xs font-medium text-dx-text-muted uppercase tracking-wide whitespace-nowrap w-[100px]">定时调度</th>
-              <th class="text-center py-3 px-4 text-xs font-medium text-dx-text-muted uppercase tracking-wide whitespace-nowrap w-[100px]">注册节点</th>
-              <th class="text-left py-3 px-4 text-xs font-medium text-dx-text-muted uppercase tracking-wide whitespace-nowrap">执行状态</th>
-              <th class="text-right py-3 px-4 text-xs font-medium text-dx-text-muted uppercase tracking-wide whitespace-nowrap w-[120px]">操作</th>
+              <th class="text-right py-3 px-4 text-xs font-medium text-dx-text-muted uppercase tracking-wide whitespace-nowrap w-[280px]">操作</th>
             </tr>
           </thead>
           <tbody>
@@ -100,72 +111,36 @@
                   {{ task.group }}
                 </span>
               </td>
-              <td class="py-3 px-4 text-center">
-                <button
-                  class="relative inline-flex items-center w-9 h-5 rounded-full transition-colors duration-200 focus:outline-none"
-                  :class="task.scheduled ? 'bg-dx-accent' : 'bg-dx-border'"
-                  role="switch"
-                  :aria-checked="task.scheduled"
-                  @click="toggleScheduled(task)"
-                >
-                  <span
-                    class="inline-block w-3.5 h-3.5 rounded-full bg-white shadow-sm transform transition-transform duration-200"
-                    :class="task.scheduled ? 'translate-x-[18px]' : 'translate-x-[3px]'"
-                    :style="{ backgroundColor: task.scheduled ? '#fff' : '#64748B' }"
-                  />
-                </button>
-              </td>
-              <td class="py-3 px-4 text-center">
-                <button
-                  class="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium bg-dx-accent/10 text-dx-accent hover:bg-dx-accent/20 transition-colors"
-                  @click="openNodeModal(task)"
-                >
-                  <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2M11 17h2M11 7h2"/>
-                  </svg>
-                  {{ task.nodes.length }} 节点
-                </button>
-              </td>
-              <td class="py-3 px-4">
-                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium" :class="statusBadgeClass(task.status)">
-                  <span class="w-1.5 h-1.5 rounded-full" :class="statusDotClass(task.status)" />
-                  {{ statusLabel(task.status) }}
-                </span>
-              </td>
               <td class="py-3 px-4 text-right">
-                <div class="relative inline-block" @click.stop>
+                <div class="flex items-center justify-end gap-1.5">
                   <button
-                    class="inline-flex items-center gap-1 px-2 py-1.5 rounded text-xs text-dx-text-secondary hover:bg-dx-card-hover hover:text-dx-text-primary transition-colors"
-                    @click="toggleActionMenu(task.id)"
-                    @blur="closeActionMenu"
+                    class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-medium text-dx-text-secondary hover:bg-dx-card-hover hover:text-dx-text-primary transition-colors"
+                    @click="handleEdit(task)"
                   >
-                    操作
-                    <svg class="w-3 h-3 transition-transform" :class="{ 'rotate-180': openActionMenuId === task.id }" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                    </svg>
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    编辑
                   </button>
-                  <div
-                    v-if="openActionMenuId === task.id"
-                    class="absolute right-0 top-full mt-1 z-50 min-w-[140px] bg-dx-card border border-dx-border rounded-lg shadow-lg py-1"
+                  <button
+                    class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-medium text-dx-danger hover:bg-red-500/10 transition-colors"
+                    @click="handleDelete(task)"
                   >
-                    <button class="w-full text-left px-3 py-2 text-xs text-dx-text-secondary hover:bg-dx-card-hover hover:text-dx-text-primary transition-colors flex items-center gap-2" @click="handleEdit(task)">
-                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                      编辑
-                    </button>
-                    <button class="w-full text-left px-3 py-2 text-xs text-dx-danger hover:bg-red-500/10 transition-colors flex items-center gap-2" @click="handleDelete(task)">
-                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                      删除
-                    </button>
-                    <div class="border-t border-dx-border my-1" />
-                    <button class="w-full text-left px-3 py-2 text-xs text-dx-text-secondary hover:bg-dx-card-hover hover:text-dx-text-primary transition-colors flex items-center gap-2" @click="handleRunOnce(task)">
-                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                      手动执行一次
-                    </button>
-                    <button class="w-full text-left px-3 py-2 text-xs text-dx-text-secondary hover:bg-dx-card-hover hover:text-dx-text-primary transition-colors flex items-center gap-2" @click="handleQueryLog(task)">
-                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM14 2v6h6M9 15h6"/></svg>
-                      查询执行日志
-                    </button>
-                  </div>
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    删除
+                  </button>
+                  <button
+                    class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-medium text-dx-text-secondary hover:bg-dx-card-hover hover:text-dx-text-primary transition-colors"
+                    @click="handleRunOnce(task)"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    手动执行一次
+                  </button>
+                  <button
+                    class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-medium bg-dx-accent/10 text-dx-accent hover:bg-dx-accent/20 transition-colors"
+                    @click="handleQueryLog(task)"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM14 2v6h6M9 15h6"/></svg>
+                    查询日志
+                  </button>
                 </div>
               </td>
             </tr>
@@ -205,65 +180,118 @@
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- Node Info Modal -->
+    <!-- Edit Task JSON Modal -->
     <Teleport to="body">
       <div
-        v-if="nodeModalVisible"
+        v-if="editModalVisible"
         class="fixed inset-0 z-[100] flex items-center justify-center bg-black/60"
-        @click.self="closeNodeModal"
+        @click.self="closeEditModal"
       >
-        <div class="bg-dx-card border border-dx-border rounded-xl shadow-2xl w-[480px] max-h-[70vh] overflow-hidden">
-          <div class="flex items-center justify-between px-5 py-4 border-b border-dx-border">
+        <div class="bg-dx-card border border-dx-border rounded-xl shadow-2xl w-[800px] max-h-[90vh] overflow-hidden flex flex-col">
+          <div class="flex items-center justify-between px-5 py-4 border-b border-dx-border flex-shrink-0">
             <div class="flex items-center gap-3">
               <div class="w-8 h-8 rounded-md bg-dx-accent/10 flex items-center justify-center">
-                <svg class="w-4 h-4 text-dx-accent" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2M11 17h2M11 7h2"/></svg>
+                <svg class="w-4 h-4 text-dx-accent" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
               </div>
               <div>
-                <h3 class="text-sm font-semibold text-dx-text-primary">注册节点信息</h3>
-                <p class="text-xs text-dx-text-muted">任务: {{ selectedTask?.id }} — {{ selectedTask?.name }}</p>
+                <h3 class="text-sm font-semibold text-dx-text-primary">编辑任务配置</h3>
+                <p class="text-xs text-dx-text-muted font-mono">{{ editingTask?.id }} — {{ editingTask?.name }}</p>
               </div>
             </div>
-            <button class="w-7 h-7 rounded-md flex items-center justify-center text-dx-text-muted hover:bg-dx-card-hover hover:text-dx-text-primary transition-colors" @click="closeNodeModal">
+            <button class="w-7 h-7 rounded-md flex items-center justify-center text-dx-text-muted hover:bg-dx-card-hover hover:text-dx-text-primary transition-colors" @click="closeEditModal">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
           </div>
-          <div class="p-5 overflow-y-auto max-h-[50vh]">
-            <table class="w-full text-sm">
-              <thead>
-                <tr class="border-b border-dx-border">
-                  <th class="text-left py-2 text-xs font-medium text-dx-text-muted uppercase">节点地址</th>
-                  <th class="text-left py-2 text-xs font-medium text-dx-text-muted uppercase">主机名</th>
-                  <th class="text-left py-2 text-xs font-medium text-dx-text-muted uppercase">规格</th>
-                  <th class="text-right py-2 text-xs font-medium text-dx-text-muted uppercase">状态</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="node in selectedTask?.nodes" :key="node.address" class="border-b border-dx-border/50 last:border-b-0">
-                  <td class="py-2.5 font-mono text-xs text-dx-text-primary">{{ node.address }}</td>
-                  <td class="py-2.5 text-xs text-dx-text-secondary">{{ node.hostname }}</td>
-                  <td class="py-2.5 text-xs text-dx-text-muted">{{ node.spec }}</td>
-                  <td class="py-2.5 text-right">
-                    <span class="text-xs px-2 py-0.5 rounded" :class="node.online ? 'text-emerald-400 bg-emerald-500/10' : 'text-amber-400 bg-amber-500/10'">
-                      {{ node.online ? '在线' : '离线' }}
-                    </span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+
+          <div class="flex-1 overflow-y-auto p-5">
+            <p class="text-xs text-dx-text-muted mb-3">直接编辑下方 DataX JSON 配置，修改后点击「校验 JSON」确认格式，再点击「保存」。</p>
+            <div class="relative rounded-lg border border-dx-border bg-dx-input focus-within:border-dx-accent transition-colors" style="height: 480px;">
+              <!-- Line numbers gutter -->
+              <div
+                ref="gutterRef"
+                class="absolute left-0 top-0 bottom-0 w-12 py-4 overflow-hidden select-none pointer-events-none text-right pr-3 font-mono text-xs leading-[23px] text-dx-text-muted/50 border-r border-dx-border"
+              >
+                <div v-for="n in lineCount" :key="n" class="h-[23px]">{{ n }}</div>
+              </div>
+              <!-- Editor -->
+              <textarea
+                ref="editorRef"
+                v-model="editJson"
+                class="w-full h-full pl-14 pr-4 py-4 bg-transparent text-sm text-dx-text-primary font-mono leading-[23px] resize-none focus:outline-none"
+                spellcheck="false"
+                @scroll="syncScroll"
+              ></textarea>
+            </div>
+
+            <div
+              v-if="jsonError"
+              class="mt-3 flex items-start gap-2 px-3 py-2.5 rounded-md bg-red-500/10 border border-red-500/20"
+            >
+              <svg class="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 8v4M12 16h.01"/></svg>
+              <span class="text-xs text-red-400 font-mono">{{ jsonError }}</span>
+            </div>
+
+            <div
+              v-if="jsonSuccess"
+              class="mt-3 flex items-center gap-2 px-3 py-2.5 rounded-md bg-emerald-500/10 border border-emerald-500/20"
+            >
+              <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4"/></svg>
+              <span class="text-xs text-emerald-400">JSON 格式校验通过</span>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between px-5 py-4 border-t border-dx-border bg-dx-card-hover/30 flex-shrink-0">
+            <span class="text-xs text-dx-text-muted">修改内容将直接更新任务配置</span>
+            <div class="flex items-center gap-2">
+              <button
+                class="h-9 px-4 rounded-md border border-dx-border text-sm text-dx-text-secondary hover:bg-dx-card-hover hover:text-dx-text-primary transition-colors"
+                @click="closeEditModal"
+              >
+                取消
+              </button>
+              <button
+                class="h-9 px-4 rounded-md border border-dx-accent text-sm text-dx-accent hover:bg-dx-accent/10 transition-colors flex items-center gap-1.5"
+                @click="handleValidateJson"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4"/></svg>
+                校验 JSON
+              </button>
+              <button
+                class="h-9 px-5 rounded-md bg-dx-accent hover:bg-cyan-500 text-white text-sm font-medium transition-colors flex items-center gap-1.5"
+                @click="handleSaveJson"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                保存
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </Teleport>
-  </div>
+
+    <!-- Manual Run Modal -->
+    <ManualRunModal
+      :visible="runModalVisible"
+      :task="runTask"
+      @close="closeRunModal"
+      @confirm="handleConfirmRun"
+    />
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import type { TaskRecord } from '@/types';
+import { useAppStore } from '@/stores/app';
+import ManualRunModal from '@/components/common/ManualRunModal.vue';
+
+const router = useRouter();
+const store = useAppStore();
 
 // --- Mock Data ---
-const mockTasks: TaskRecord[] = [
+const mockTasks = ref<TaskRecord[]>([
   { id: 'DX-20240512-001', name: '用户行为数据同步', user: '张工', group: '数据平台组', scheduled: true, nodes: [{ address: '10.23.45.101:8801', hostname: 'dx-worker-nj-01', spec: '8C / 16G', online: true }, { address: '10.23.45.102:8801', hostname: 'dx-worker-nj-02', spec: '8C / 16G', online: true }, { address: '10.23.45.103:8801', hostname: 'dx-worker-nj-03', spec: '16C / 32G', online: false }], status: 'success', dataSource: 'mysql_analytics', duration: '3m 42s', startTime: '2024-05-12 10:00' },
   { id: 'DX-20240512-002', name: '订单数据ETL', user: '李工', group: '电商组', scheduled: true, nodes: [{ address: '10.23.45.101:8801', hostname: 'dx-worker-nj-01', spec: '8C / 16G', online: true }, { address: '10.23.45.104:8801', hostname: 'dx-worker-nj-04', spec: '16C / 32G', online: true }], status: 'running', dataSource: 'pg_orders', duration: '12m 18s', startTime: '2024-05-12 10:05' },
   { id: 'DX-20240512-003', name: '日志数据清洗', user: '王工', group: '数据平台组', scheduled: false, nodes: [{ address: '10.23.45.101:8801', hostname: 'dx-worker-nj-01', spec: '8C / 16G', online: true }, { address: '10.23.45.102:8801', hostname: 'dx-worker-nj-02', spec: '8C / 16G', online: true }, { address: '10.23.45.103:8801', hostname: 'dx-worker-nj-03', spec: '16C / 32G', online: false }, { address: '10.23.45.104:8801', hostname: 'dx-worker-nj-04', spec: '16C / 32G', online: true }, { address: '10.23.45.105:8801', hostname: 'dx-worker-nj-05', spec: '8C / 16G', online: true }], status: 'success', dataSource: 'hdfs_logs', duration: '8m 05s', startTime: '2024-05-12 09:45' },
@@ -271,7 +299,7 @@ const mockTasks: TaskRecord[] = [
   { id: 'DX-20240512-005', name: '用户画像更新', user: '刘工', group: '增长组', scheduled: false, nodes: [{ address: '10.23.45.105:8801', hostname: 'dx-worker-nj-05', spec: '8C / 16G', online: true }], status: 'pending', dataSource: 'hive_user_profile', duration: '—', startTime: '2024-05-12 11:00' },
   { id: 'DX-20240512-006', name: '库存数据增量同步', user: '陈工', group: '商品组', scheduled: true, nodes: [{ address: '10.23.45.101:8801', hostname: 'dx-worker-nj-01', spec: '8C / 16G', online: true }, { address: '10.23.45.104:8801', hostname: 'dx-worker-nj-04', spec: '16C / 32G', online: true }], status: 'success', dataSource: 'mysql_inventory', duration: '1m 15s', startTime: '2024-05-12 10:15' },
   { id: 'DX-20240512-007', name: '广告投放数据汇总', user: '周工', group: '增长组', scheduled: true, nodes: [{ address: '10.23.45.101:8801', hostname: 'dx-worker-nj-01', spec: '8C / 16G', online: true }, { address: '10.23.45.102:8801', hostname: 'dx-worker-nj-02', spec: '8C / 16G', online: true }, { address: '10.23.45.104:8801', hostname: 'dx-worker-nj-04', spec: '16C / 32G', online: true }], status: 'running', dataSource: 'clickhouse_ads', duration: '5m 50s', startTime: '2024-05-12 10:10' },
-];
+]);
 
 // --- Filters ---
 const filters = reactive({ taskId: '', taskName: '', keyword: '' });
@@ -290,7 +318,7 @@ function toggleSort(field: 'id') {
 
 // --- Filtered data ---
 const filteredTasks = computed(() => {
-  let list = [...mockTasks];
+  let list = [...mockTasks.value];
   if (filters.taskId) list = list.filter((t) => t.id.toLowerCase().includes(filters.taskId.toLowerCase()));
   if (filters.taskName) list = list.filter((t) => t.name.includes(filters.taskName));
   if (filters.keyword) {
@@ -345,52 +373,139 @@ function handleReset() {
   currentPage.value = 1;
 }
 
-// --- Action menu ---
-const openActionMenuId = ref<string | null>(null);
-function toggleActionMenu(id: string) {
-  openActionMenuId.value = openActionMenuId.value === id ? null : id;
+function handleEdit(task: TaskRecord) {
+  editingTask.value = task;
+  editJson.value = JSON.stringify(buildTaskJson(task), null, 2);
+  jsonError.value = '';
+  jsonSuccess.value = false;
+  editModalVisible.value = true;
 }
-function closeActionMenu() {
-  // Delayed to allow click on menu items
-  setTimeout(() => { openActionMenuId.value = null; }, 150);
+function handleDelete(task: TaskRecord) { mockTasks.value = mockTasks.value.filter((t) => t.id !== task.id); }
+function handleRunOnce(task: TaskRecord) {
+  runTask.value = task;
+  runModalVisible.value = true;
 }
-function handleEdit(task: TaskRecord) { openActionMenuId.value = null; console.log('Edit:', task.id); }
-function handleDelete(task: TaskRecord) { openActionMenuId.value = null; console.log('Delete:', task.id); }
-function handleRunOnce(task: TaskRecord) { openActionMenuId.value = null; console.log('Run once:', task.id); }
-function handleQueryLog(task: TaskRecord) { openActionMenuId.value = null; console.log('Query log:', task.id); }
-
-// --- Toggle scheduled ---
-function toggleScheduled(task: TaskRecord) {
-  task.scheduled = !task.scheduled;
-}
-
-// --- Node modal ---
-const nodeModalVisible = ref(false);
-const selectedTask = ref<TaskRecord | null>(null);
-function openNodeModal(task: TaskRecord) {
-  selectedTask.value = task;
-  nodeModalVisible.value = true;
-}
-function closeNodeModal() {
-  nodeModalVisible.value = false;
-  selectedTask.value = null;
-}
-
-// --- Status helpers ---
-function statusLabel(s: string) {
-  const m: Record<string, string> = { running: '运行中', success: '成功', failed: '失败', pending: '等待中' };
-  return m[s] ?? s;
-}
-function statusBadgeClass(s: string) {
-  const m: Record<string, string> = { running: 'bg-cyan-500/10 text-cyan-400', success: 'bg-emerald-500/10 text-emerald-400', failed: 'bg-red-500/10 text-red-400', pending: 'bg-amber-500/10 text-amber-400' };
-  return m[s] ?? '';
-}
-function statusDotClass(s: string) {
-  const m: Record<string, string> = { running: 'bg-cyan-400 animate-pulse', success: 'bg-emerald-400', failed: 'bg-red-400', pending: 'bg-amber-400' };
-  return m[s] ?? '';
+function handleQueryLog(task: TaskRecord) {
+  store.openLogDialog({
+    taskId: task.id,
+    taskName: task.name,
+    params: '--channel=3 --speed=5MB/s',
+  });
 }
 function groupBadgeClass(g: string) {
   const m: Record<string, string> = { '数据平台组': 'bg-blue-500/10 text-blue-400', '电商组': 'bg-violet-500/10 text-violet-400', '商品组': 'bg-amber-500/10 text-amber-400', '增长组': 'bg-pink-500/10 text-pink-400' };
   return m[g] ?? 'bg-dx-input text-dx-text-secondary';
+}
+
+// --- Edit Modal ---
+const editModalVisible = ref(false);
+const editingTask = ref<TaskRecord | null>(null);
+const editJson = ref('');
+const jsonError = ref('');
+const jsonSuccess = ref(false);
+const editorRef = ref<HTMLTextAreaElement | null>(null);
+const gutterRef = ref<HTMLDivElement | null>(null);
+
+const lineCount = computed(() => {
+  const lines = editJson.value.split('\n').length;
+  return Math.max(lines, 1);
+});
+
+function syncScroll() {
+  if (editorRef.value && gutterRef.value) {
+    gutterRef.value.scrollTop = editorRef.value.scrollTop;
+  }
+}
+
+function buildTaskJson(task: TaskRecord) {
+  return {
+    job: {
+      setting: {
+        speed: { channel: 3 },
+      },
+      content: [
+        {
+          reader: {
+            name: 'mysqlreader',
+            parameter: {
+              username: 'datax_user',
+              password: '***',
+              column: ['id', 'user_id', 'action', 'category', 'created_at'],
+              connection: [
+                {
+                  table: [task.name],
+                  jdbcUrl: [`jdbc:mysql://10.23.45.10:3306/${task.dataSource}`],
+                },
+              ],
+            },
+          },
+          writer: {
+            name: 'clickhousewriter',
+            parameter: {
+              username: 'default',
+              password: '***',
+              column: ['id', 'user_id', 'action', 'category', 'created_at'],
+              connection: [
+                {
+                  table: [`dw_${task.dataSource}`],
+                  jdbcUrl: ['jdbc:clickhouse://10.23.45.20:8123/analytics'],
+                },
+              ],
+            },
+          },
+        },
+      ],
+    },
+  };
+}
+
+function handleValidateJson() {
+  try {
+    JSON.parse(editJson.value);
+    jsonError.value = '';
+    jsonSuccess.value = true;
+    setTimeout(() => { jsonSuccess.value = false; }, 2000);
+  } catch (e: unknown) {
+    jsonError.value = (e as Error).message;
+    jsonSuccess.value = false;
+  }
+}
+
+function handleSaveJson() {
+  try {
+    JSON.parse(editJson.value);
+    console.log('Save task:', editingTask.value?.id, JSON.parse(editJson.value));
+    editModalVisible.value = false;
+    editingTask.value = null;
+    jsonError.value = '';
+    jsonSuccess.value = false;
+  } catch (e: unknown) {
+    jsonError.value = `保存失败: ${(e as Error).message}`;
+  }
+}
+
+function closeEditModal() {
+  editModalVisible.value = false;
+  editingTask.value = null;
+  jsonError.value = '';
+  jsonSuccess.value = false;
+}
+
+// --- Run Modal ---
+const runModalVisible = ref(false);
+const runTask = ref<TaskRecord | null>(null);
+
+function handleConfirmRun(params: string, jvmArgs: string) {
+  if (!runTask.value) return;
+  console.log('Manual run:', runTask.value.id, { params, jvmArgs });
+  store.setHighlightedTask({ id: runTask.value.id, name: runTask.value.name });
+  runModalVisible.value = false;
+  runTask.value = null;
+  router.push('/schedule/run-detail');
+}
+
+function closeRunModal() {
+  runModalVisible.value = false;
+  runTask.value = null;
 }
 </script>

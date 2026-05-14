@@ -1,1 +1,0 @@
-将 `@/Users/sunpeng9/Documents/claude-code-project/sales_analysis/sales_analysis.ipynb` 转换成一个 streamlit 仪表盘

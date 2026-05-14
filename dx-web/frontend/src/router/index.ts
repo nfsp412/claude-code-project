@@ -12,7 +12,7 @@ const routes: RouteRecordRaw[] = [
     path: '/tasks/list',
     name: 'task-list',
     component: () => import('@/views/TaskListView.vue'),
-    meta: { title: '任务明细列表' },
+    meta: { title: '任务列表' },
   },
   {
     path: '/tasks/builder',
@@ -22,9 +22,15 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/schedule',
-    name: 'schedule',
+    name: 'schedule-config',
     component: () => import('@/views/ScheduleView.vue'),
-    meta: { title: '调度管理' },
+    meta: { title: '任务调度' },
+  },
+  {
+    path: '/schedule/run-detail',
+    name: 'schedule-run-detail',
+    component: () => import('@/views/TaskRunDetailView.vue'),
+    meta: { title: '任务运行明细' },
   },
   {
     path: '/datasource',

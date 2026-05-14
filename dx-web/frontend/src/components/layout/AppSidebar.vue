@@ -11,47 +11,7 @@
           class="mx-4 my-2 border-t border-dx-border"
         />
 
-        <!-- Parent menu with children -->
-        <div v-if="item.children && item.children.length > 0">
-          <button
-            class="sidebar-item w-full"
-            :class="{ 'sidebar-item-active': isChildActive(item) }"
-            @click="store.toggleMenuExpand(item.key)"
-          >
-            <svg class="w-[18px] h-[18px] flex-shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-              <component :is="iconPaths[item.icon]" />
-            </svg>
-            <span v-if="!store.sidebarCollapsed" class="flex-1 text-left truncate">{{ item.label }}</span>
-            <svg
-              v-if="!store.sidebarCollapsed"
-              class="w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200"
-              :class="{ 'rotate-90': store.isMenuExpanded(item.key) }"
-              fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
-            >
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-            </svg>
-          </button>
-          <div
-            v-if="store.isMenuExpanded(item.key) && !store.sidebarCollapsed"
-            class="flex flex-col gap-0.5 py-1"
-          >
-            <router-link
-              v-for="child in item.children"
-              :key="child.key"
-              :to="child.path!"
-              class="sidebar-subitem"
-              :class="{ 'sidebar-subitem-active': store.activeMenu === child.key }"
-              @click="store.setActiveMenu(child.key)"
-            >
-              <span class="w-1 h-1 rounded-full bg-current opacity-50 flex-shrink-0" />
-              <span class="truncate">{{ child.label }}</span>
-            </router-link>
-          </div>
-        </div>
-
-        <!-- Top-level menu item -->
         <router-link
-          v-else
           :to="item.path!"
           class="sidebar-item no-underline"
           :class="{ 'sidebar-item-active': store.activeMenu === item.key }"
@@ -84,13 +44,7 @@
 import { h } from 'vue';
 import type { VNode } from 'vue';
 import { useAppStore } from '@/stores/app';
-import type { MenuItem } from '@/types';
-
 const store = useAppStore();
-
-function isChildActive(item: MenuItem): boolean {
-  return item.children?.some((c) => c.key === store.activeMenu) ?? false;
-}
 
 // Inline SVG icon paths as simple VNodes
 const iconPaths: Record<string, () => VNode> = {
@@ -102,8 +56,12 @@ const iconPaths: Record<string, () => VNode> = {
     h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M4 6h16M4 12h16M4 18h16' }),
   Hammer: () =>
     h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M14.7 6.3a1 1 0 000-2.8L13.3 2l-3 3 1.4 1.4a1 1 0 002.8 0L14.7 6.3zM9.5 9.5L2 17l3 3 7.5-7.5-3-3z' }),
+  Calendar: () =>
+    h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M8 2v4M16 2v4M3 10h18M21 10V8a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2h14a2 2 0 002-2v-4M12 14v4M9 16h6' }),
   Clock: () =>
     h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10zM12 6v6l4 2' }),
+  FileText: () =>
+    h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM14 2v6h6M16 13H8M16 17H8M10 9H8' }),
   Database: () =>
     h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', d: 'M4 6c0 1.657 3.582 3 8 3s8-1.343 8-3-3.582-3-8-3-8 1.343-8 3zm16 6c0 1.657-3.582 3-8 3s-8-1.343-8-3m16 6c0 1.657-3.582 3-8 3s-8-1.343-8-3' }),
   FileSearch: () =>

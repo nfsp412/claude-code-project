@@ -61,3 +61,14 @@ export interface AppState {
   expandedMenus: string[];
   userInfo: UserInfo;
 }
+
+export interface LogLine {
+  time: string;
+  level: string;
+  msg: string;
+}
+
+export interface HighlightedTask {
+  id: string;
+  name: string;
+}

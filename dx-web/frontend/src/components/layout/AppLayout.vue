@@ -10,6 +10,7 @@
         <router-view />
       </main>
     </div>
+    <LogQueryDialog />
   </div>
 </template>
 
@@ -17,6 +18,7 @@
 import { useAppStore } from '@/stores/app';
 import AppNavbar from './AppNavbar.vue';
 import AppSidebar from './AppSidebar.vue';
+import LogQueryDialog from '@/components/common/LogQueryDialog.vue';
 
 const store = useAppStore();
 </script>
